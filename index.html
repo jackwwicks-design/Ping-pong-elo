@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Table Tennis Ladder</title>
-  <style>
-    body { font-family: Arial; max-width: 900px; margin: auto; padding: 20px; }
-    h2 { margin-top: 40px; }
-    input, select, button { padding: 6px; margin: 5px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-    button { cursor: pointer; }
-    .suggestion { background: #f3f3f3; padding: 8px; margin: 5px 0; }
-  </style>
+<meta charset="UTF-8">
+<title>Table Tennis Ladder</title>
+<style>
+body { font-family: Arial; max-width: 1100px; margin: auto; padding: 20px; }
+h2 { margin-top: 40px; }
+input, select, button { padding: 6px; margin: 4px; }
+table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+button { cursor: pointer; }
+.suggestion { background:#f2f2f2; padding:10px; margin:6px 0; }
+.small { font-size: 12px; }
+</style>
 </head>
 <body>
 
@@ -21,150 +22,240 @@
 <input id="playerName" placeholder="Player name">
 <button onclick="addPlayer()">Add</button>
 
-<h2>Record Match</h2>
+<h2>Suggested Matches</h2>
+<div id="suggestions"></div>
+
+<h2>Manual Match Entry</h2>
 <select id="player1"></select>
 <input id="score1" type="number" placeholder="Score">
 <select id="player2"></select>
 <input id="score2" type="number" placeholder="Score">
-<button onclick="recordMatch()">Submit</button>
-
-<h2>Suggested Matches</h2>
-<div id="suggestions"></div>
+<button onclick="recordManualMatch()">Submit</button>
 
 <h2>Rankings</h2>
 <table>
-  <thead>
-    <tr>
-      <th>Rank</th>
-      <th>Name</th>
-      <th>Rating</th>
-      <th>Wins</th>
-      <th>Losses</th>
-    </tr>
-  </thead>
-  <tbody id="rankingTable"></tbody>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Name</th>
+<th>Rating</th>
+<th>Games</th>
+<th>Wins</th>
+<th>Losses</th>
+</tr>
+</thead>
+<tbody id="rankingTable"></tbody>
+</table>
+
+<h2>Match History</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Match</th>
+<th>Score</th>
+<th>Edit</th>
+<th>Delete</th>
+</tr>
+</thead>
+<tbody id="historyTable"></tbody>
 </table>
 
 <script>
+
 let players = JSON.parse(localStorage.getItem("players")) || [];
+let matches = JSON.parse(localStorage.getItem("matches")) || [];
+let dismissed = JSON.parse(localStorage.getItem("dismissed")) || [];
 
 const K = 32;
 
 function save() {
-  localStorage.setItem("players", JSON.stringify(players));
+localStorage.setItem("players", JSON.stringify(players));
+localStorage.setItem("matches", JSON.stringify(matches));
+localStorage.setItem("dismissed", JSON.stringify(dismissed));
 }
 
 function addPlayer() {
-  const name = document.getElementById("playerName").value.trim();
-  if (!name) return;
-  players.push({
-    name,
-    rating: 1000,
-    wins: 0,
-    losses: 0,
-    matches: []
-  });
-  document.getElementById("playerName").value = "";
-  save();
-  updateUI();
+const name = document.getElementById("playerName").value.trim();
+if (!name) return;
+
+players.push({
+name,
+rating: 1000,
+wins: 0,
+losses: 0,
+games: 0
+});
+
+document.getElementById("playerName").value = "";
+save();
+updateAll();
 }
 
-function expectedScore(r1, r2) {
-  return 1 / (1 + Math.pow(10, (r2 - r1) / 400));
+function expected(r1, r2) {
+return 1 / (1 + Math.pow(10, (r2 - r1) / 400));
 }
 
-function recordMatch() {
-  const p1 = players[document.getElementById("player1").value];
-  const p2 = players[document.getElementById("player2").value];
-  const s1 = parseInt(document.getElementById("score1").value);
-  const s2 = parseInt(document.getElementById("score2").value);
+function recalcRatings() {
+players.forEach(p => {
+p.rating = 1000;
+p.wins = 0;
+p.losses = 0;
+p.games = 0;
+});
 
-  if (p1 === p2 || isNaN(s1) || isNaN(s2)) return;
+matches.forEach(m => {
+const p1 = players.find(p=>p.name===m.p1);
+const p2 = players.find(p=>p.name===m.p2);
 
-  const winner = s1 > s2 ? p1 : p2;
-  const loser = s1 > s2 ? p2 : p1;
+const e1 = expected(p1.rating, p2.rating);
+const e2 = expected(p2.rating, p1.rating);
 
-  const e1 = expectedScore(p1.rating, p2.rating);
-  const e2 = expectedScore(p2.rating, p1.rating);
-
-  if (winner === p1) {
-    p1.rating += K * (1 - e1);
-    p2.rating += K * (0 - e2);
-  } else {
-    p2.rating += K * (1 - e2);
-    p1.rating += K * (0 - e1);
-  }
-
-  winner.wins++;
-  loser.losses++;
-
-  p1.matches.push(p2.name);
-  p2.matches.push(p1.name);
-
-  save();
-  updateUI();
+if (m.s1 > m.s2) {
+p1.rating += K*(1-e1);
+p2.rating += K*(0-e2);
+p1.wins++; p2.losses++;
+} else {
+p2.rating += K*(1-e2);
+p1.rating += K*(0-e1);
+p2.wins++; p1.losses++;
 }
 
-function updateUI() {
-  updateDropdowns();
-  updateRankings();
-  updateSuggestions();
+p1.games++;
+p2.games++;
+});
 }
 
-function updateDropdowns() {
-  const p1Select = document.getElementById("player1");
-  const p2Select = document.getElementById("player2");
+function recordManualMatch() {
+const p1 = players[document.getElementById("player1").value];
+const p2 = players[document.getElementById("player2").value];
+const s1 = parseInt(document.getElementById("score1").value);
+const s2 = parseInt(document.getElementById("score2").value);
+if (p1===p2 || isNaN(s1)||isNaN(s2)) return;
 
-  p1Select.innerHTML = "";
-  p2Select.innerHTML = "";
+matches.push({p1:p1.name,p2:p2.name,s1,s2});
+dismissed = [];
+save();
+updateAll();
+}
 
-  players.forEach((p, i) => {
-    p1Select.innerHTML += `<option value="${i}">${p.name}</option>`;
-    p2Select.innerHTML += `<option value="${i}">${p.name}</option>`;
-  });
+function recordSuggestedMatch(p1Name,p2Name,s1,s2) {
+matches.push({p1:p1Name,p2:p2Name,s1,s2});
+dismissed = [];
+save();
+updateAll();
+}
+
+function deleteMatch(index) {
+matches.splice(index,1);
+save();
+updateAll();
+}
+
+function editMatch(index) {
+const m = matches[index];
+const s1 = prompt("New score for "+m.p1, m.s1);
+const s2 = prompt("New score for "+m.p2, m.s2);
+if (s1===null||s2===null) return;
+m.s1=parseInt(s1);
+m.s2=parseInt(s2);
+save();
+updateAll();
 }
 
 function updateRankings() {
-  const table = document.getElementById("rankingTable");
-  table.innerHTML = "";
+recalcRatings();
+players.sort((a,b)=>b.rating-a.rating);
+const table=document.getElementById("rankingTable");
+table.innerHTML="";
+players.forEach((p,i)=>{
+table.innerHTML+=`
+<tr>
+<td>${i+1}</td>
+<td>${p.name}</td>
+<td>${Math.round(p.rating)}</td>
+<td>${p.games}</td>
+<td>${p.wins}</td>
+<td>${p.losses}</td>
+</tr>`;
+});
+}
 
-  players.sort((a,b) => b.rating - a.rating);
+function updateDropdowns() {
+const p1=document.getElementById("player1");
+const p2=document.getElementById("player2");
+p1.innerHTML=""; p2.innerHTML="";
+players.forEach((p,i)=>{
+p1.innerHTML+=`<option value="${i}">${p.name}</option>`;
+p2.innerHTML+=`<option value="${i}">${p.name}</option>`;
+});
+}
 
-  players.forEach((p, i) => {
-    table.innerHTML += `
-      <tr>
-        <td>${i+1}</td>
-        <td>${p.name}</td>
-        <td>${Math.round(p.rating)}</td>
-        <td>${p.wins}</td>
-        <td>${p.losses}</td>
-      </tr>
-    `;
-  });
+function updateHistory() {
+const table=document.getElementById("historyTable");
+table.innerHTML="";
+matches.forEach((m,i)=>{
+table.innerHTML+=`
+<tr>
+<td>${i+1}</td>
+<td>${m.p1} vs ${m.p2}</td>
+<td>${m.s1}-${m.s2}</td>
+<td><button onclick="editMatch(${i})">Edit</button></td>
+<td><button onclick="deleteMatch(${i})">X</button></td>
+</tr>`;
+});
 }
 
 function updateSuggestions() {
-  const div = document.getElementById("suggestions");
-  div.innerHTML = "";
+const div=document.getElementById("suggestions");
+div.innerHTML="";
+if(players.length<2) return;
 
-  if (players.length < 2) return;
+let sorted=[...players].sort((a,b)=>a.games-b.games||Math.abs(a.rating-b.rating));
+let suggestions=[];
 
-  // Suggest nearest rating pairs who haven't played recently
-  const sorted = [...players].sort((a,b)=>b.rating-a.rating);
-
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const p1 = sorted[i];
-    const p2 = sorted[i+1];
-    div.innerHTML += `
-      <div class="suggestion">
-        ${p1.name} vs ${p2.name}
-      </div>
-    `;
-  }
+for(let i=0;i<sorted.length;i++){
+for(let j=i+1;j<sorted.length;j++){
+let key=sorted[i].name+"-"+sorted[j].name;
+if(!dismissed.includes(key)){
+suggestions.push([sorted[i],sorted[j]]);
+}
+}
 }
 
-updateUI();
-</script>
+suggestions.slice(0,5).forEach(pair=>{
+let key=pair[0].name+"-"+pair[1].name;
+div.innerHTML+=`
+<div class="suggestion">
+<b>${pair[0].name}</b> vs <b>${pair[1].name}</b><br>
+<input type="number" id="s1-${key}" placeholder="Score">
+<input type="number" id="s2-${key}" placeholder="Score">
+<button onclick="recordSuggestedMatch('${pair[0].name}','${pair[1].name}',
+parseInt(document.getElementById('s1-${key}').value),
+parseInt(document.getElementById('s2-${key}').value))">
+Submit
+</button>
+<button onclick="dismiss('${key}')">X</button>
+</div>`;
+});
+}
 
+function dismiss(key){
+dismissed.push(key);
+save();
+updateSuggestions();
+}
+
+function updateAll(){
+updateDropdowns();
+updateRankings();
+updateSuggestions();
+updateHistory();
+save();
+}
+
+updateAll();
+
+</script>
 </body>
 </html>
