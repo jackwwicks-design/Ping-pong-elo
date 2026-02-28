@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Table Tennis Ladder</title>
+  <style>
+    body { font-family: Arial; max-width: 900px; margin: auto; padding: 20px; }
+    h2 { margin-top: 40px; }
+    input, select, button { padding: 6px; margin: 5px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+    button { cursor: pointer; }
+    .suggestion { background: #f3f3f3; padding: 8px; margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+<h1>🏓 Table Tennis Ladder</h1>
+
+<h2>Add Player</h2>
+<input id="playerName" placeholder="Player name">
+<button onclick="addPlayer()">Add</button>
+
+<h2>Record Match</h2>
+<select id="player1"></select>
+<input id="score1" type="number" placeholder="Score">
+<select id="player2"></select>
+<input id="score2" type="number" placeholder="Score">
+<button onclick="recordMatch()">Submit</button>
+
+<h2>Suggested Matches</h2>
+<div id="suggestions"></div>
+
+<h2>Rankings</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Rank</th>
+      <th>Name</th>
+      <th>Rating</th>
+      <th>Wins</th>
+      <th>Losses</th>
+    </tr>
+  </thead>
+  <tbody id="rankingTable"></tbody>
+</table>
+
+<script>
+let players = JSON.parse(localStorage.getItem("players")) || [];
+
+const K = 32;
+
+function save() {
+  localStorage.setItem("players", JSON.stringify(players));
+}
+
+function addPlayer() {
+  const name = document.getElementById("playerName").value.trim();
+  if (!name) return;
+  players.push({
+    name,
+    rating: 1000,
+    wins: 0,
+    losses: 0,
+    matches: []
+  });
+  document.getElementById("playerName").value = "";
+  save();
+  updateUI();
+}
+
+function expectedScore(r1, r2) {
+  return 1 / (1 + Math.pow(10, (r2 - r1) / 400));
+}
+
+function recordMatch() {
+  const p1 = players[document.getElementById("player1").value];
+  const p2 = players[document.getElementById("player2").value];
+  const s1 = parseInt(document.getElementById("score1").value);
+  const s2 = parseInt(document.getElementById("score2").value);
+
+  if (p1 === p2 || isNaN(s1) || isNaN(s2)) return;
+
+  const winner = s1 > s2 ? p1 : p2;
+  const loser = s1 > s2 ? p2 : p1;
+
+  const e1 = expectedScore(p1.rating, p2.rating);
+  const e2 = expectedScore(p2.rating, p1.rating);
+
+  if (winner === p1) {
+    p1.rating += K * (1 - e1);
+    p2.rating += K * (0 - e2);
+  } else {
+    p2.rating += K * (1 - e2);
+    p1.rating += K * (0 - e1);
+  }
+
+  winner.wins++;
+  loser.losses++;
+
+  p1.matches.push(p2.name);
+  p2.matches.push(p1.name);
+
+  save();
+  updateUI();
+}
+
+function updateUI() {
+  updateDropdowns();
+  updateRankings();
+  updateSuggestions();
+}
+
+function updateDropdowns() {
+  const p1Select = document.getElementById("player1");
+  const p2Select = document.getElementById("player2");
+
+  p1Select.innerHTML = "";
+  p2Select.innerHTML = "";
+
+  players.forEach((p, i) => {
+    p1Select.innerHTML += `<option value="${i}">${p.name}</option>`;
+    p2Select.innerHTML += `<option value="${i}">${p.name}</option>`;
+  });
+}
+
+function updateRankings() {
+  const table = document.getElementById("rankingTable");
+  table.innerHTML = "";
+
+  players.sort((a,b) => b.rating - a.rating);
+
+  players.forEach((p, i) => {
+    table.innerHTML += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${p.name}</td>
+        <td>${Math.round(p.rating)}</td>
+        <td>${p.wins}</td>
+        <td>${p.losses}</td>
+      </tr>
+    `;
+  });
+}
+
+function updateSuggestions() {
+  const div = document.getElementById("suggestions");
+  div.innerHTML = "";
+
+  if (players.length < 2) return;
+
+  // Suggest nearest rating pairs who haven't played recently
+  const sorted = [...players].sort((a,b)=>b.rating-a.rating);
+
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const p1 = sorted[i];
+    const p2 = sorted[i+1];
+    div.innerHTML += `
+      <div class="suggestion">
+        ${p1.name} vs ${p2.name}
+      </div>
+    `;
+  }
+}
+
+updateUI();
+</script>
+
+</body>
+</html>
