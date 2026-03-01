@@ -52,15 +52,13 @@ th, td {
 th { background: #f0f2f7; }
 tr:nth-child(even) { background: #fafbff; }
 
-.rank-1 {
-  background: linear-gradient(90deg, gold, #fff8dc);
-  font-weight: bold;
-}
-.rank-2 {
-  background: linear-gradient(90deg, silver, #f8f8f8);
-}
-.rank-3 {
-  background: linear-gradient(90deg, #cd7f32, #fdf6e3);
+.rank-1 { background: linear-gradient(90deg, gold, #fff8dc); font-weight: bold; }
+.rank-2 { background: linear-gradient(90deg, silver, #f8f8f8); }
+.rank-3 { background: linear-gradient(90deg, #cd7f32, #fdf6e3); }
+
+.retired {
+  opacity: 0.5;
+  background: #e9ecef !important;
 }
 
 button {
@@ -72,12 +70,9 @@ button {
   color: white;
 }
 
-button.small {
-  padding: 4px 8px;
-  font-size: 12px;
-}
-
+button.small { padding: 4px 8px; font-size: 12px; }
 button.danger { background: #e03131; }
+button.warning { background: #f59f00; }
 
 input, select {
   padding: 5px;
@@ -101,7 +96,7 @@ input, select {
 
   <div class="section">
     <h2>Leaderboard</h2>
-    <div class="scrollable" style="max-height: 420px;">
+    <div class="scrollable" style="max-height: 480px;">
       <table>
         <thead>
           <tr>
@@ -179,11 +174,20 @@ function addPlayer() {
     rating: 1000,
     games: 0,
     wins: 0,
-    losses: 0
+    losses: 0,
+    retired: false
   });
 
   nameInput.value = "";
   recalcStats();
+  saveData();
+  render();
+}
+
+function retirePlayer(id) {
+  const player = players.find(p => p.id === id);
+  if (!player) return;
+  player.retired = true;
   saveData();
   render();
 }
@@ -229,7 +233,6 @@ function deleteMatch(id) {
 
 function resetTournament() {
   if (!confirm("Are you sure? This will delete all matches and reset ratings.")) return;
-
   matches = [];
   players.forEach(p => {
     p.rating = 1000;
@@ -237,7 +240,6 @@ function resetTournament() {
     p.wins = 0;
     p.losses = 0;
   });
-
   saveData();
   render();
 }
@@ -273,13 +275,8 @@ function recalcStats() {
     p1.games++;
     p2.games++;
 
-    if (result1 === 1) {
-      p1.wins++;
-      p2.losses++;
-    } else {
-      p2.wins++;
-      p1.losses++;
-    }
+    if (result1 === 1) { p1.wins++; p2.losses++; }
+    else { p2.wins++; p1.losses++; }
   });
 }
 
@@ -295,33 +292,43 @@ function renderLeaderboard() {
   const body = document.getElementById("leaderboardBody");
   body.innerHTML = "";
 
-  const sorted = [...players].sort((a,b)=>b.rating-a.rating);
+  const active = players.filter(p => !p.retired).sort((a,b)=>b.rating-a.rating);
+  const retired = players.filter(p => p.retired).sort((a,b)=>b.rating-a.rating);
 
-  sorted.forEach((p,index)=>{
-    const tr = document.createElement("tr");
-    if (index===0) tr.className="rank-1";
-    if (index===1) tr.className="rank-2";
-    if (index===2) tr.className="rank-3";
+  const combined = [...active, ...retired];
 
-    tr.innerHTML = `
+  combined.forEach((p,index)=>{
+    const tr=document.createElement("tr");
+
+    if (!p.retired) {
+      if (index===0) tr.className="rank-1";
+      if (index===1) tr.className="rank-2";
+      if (index===2) tr.className="rank-3";
+    } else {
+      tr.className="retired";
+    }
+
+    tr.innerHTML=`
       <td>${index+1}</td>
-      <td>${p.name}</td>
+      <td>${p.name}${p.retired?" (Retired)":""}</td>
       <td>${Math.round(p.rating)}</td>
       <td>${p.wins}</td>
       <td>${p.losses}</td>
       <td>${p.games}</td>
-      <td><button class="small danger" onclick="removePlayer('${p.id}')">X</button></td>
+      <td>
+        ${!p.retired ? `<button class="small warning" onclick="retirePlayer('${p.id}')">Retire</button>` : ""}
+        <button class="small danger" onclick="removePlayer('${p.id}')">X</button>
+      </td>
     `;
     body.appendChild(tr);
   });
 }
 
 function renderDropdowns() {
-  const p1 = document.getElementById("p1");
-  const p2 = document.getElementById("p2");
-  p1.innerHTML="";
-  p2.innerHTML="";
-  players.forEach(p=>{
+  const p1=document.getElementById("p1");
+  const p2=document.getElementById("p2");
+  p1.innerHTML=""; p2.innerHTML="";
+  players.filter(p=>!p.retired).forEach(p=>{
     const o1=document.createElement("option");
     o1.value=p.id;o1.textContent=p.name;p1.appendChild(o1);
     const o2=document.createElement("option");
@@ -346,56 +353,18 @@ function renderHistory() {
 
 function generateSuggestions() {
   suggestions=[];
-  if(players.length<2)return;
+  const activePlayers = players.filter(p=>!p.retired);
+  if(activePlayers.length<2)return;
 
-  const appearanceCount={};
-  matches.slice(-10).forEach(m=>{
-    appearanceCount[m.player1Id]=(appearanceCount[m.player1Id]||0)+1;
-    appearanceCount[m.player2Id]=(appearanceCount[m.player2Id]||0)+1;
-  });
-
-  const pairCounts={};
-  matches.forEach(m=>{
-    const key=[m.player1Id,m.player2Id].sort().join("-");
-    pairCounts[key]=(pairCounts[key]||0)+1;
-  });
-
-  const candidatePairs=[];
-  for(let i=0;i<players.length;i++){
-    for(let j=i+1;j<players.length;j++){
-      const p1=players[i];
-      const p2=players[j];
-      const key=[p1.id,p2.id].sort().join("-");
-      const pairCount=pairCounts[key]||0;
-      const ratingDiff=Math.abs(p1.rating-p2.rating);
-      const recentLoad=(appearanceCount[p1.id]||0)+(appearanceCount[p2.id]||0);
-      const score = pairCount*5 + ratingDiff/50 + recentLoad*2 + Math.random()*3;
-      candidatePairs.push({p1,p2,score});
+  for(let i=0;i<activePlayers.length;i++){
+    for(let j=i+1;j<activePlayers.length;j++){
+      suggestions.push({
+        id:crypto.randomUUID(),
+        p1Id:activePlayers[i].id,
+        p2Id:activePlayers[j].id
+      });
+      if(suggestions.length>=4)return;
     }
-  }
-
-  candidatePairs.sort((a,b)=>a.score-b.score);
-
-  const used=new Set();
-  for(let c of candidatePairs){
-    if(suggestions.length>=4)break;
-    if(used.has(c.p1.id)||used.has(c.p2.id))continue;
-    suggestions.push({
-      id:crypto.randomUUID(),
-      p1Id:c.p1.id,
-      p2Id:c.p2.id
-    });
-    used.add(c.p1.id);
-    used.add(c.p2.id);
-  }
-
-  while(suggestions.length<4 && candidatePairs.length>0){
-    const r=candidatePairs[Math.floor(Math.random()*candidatePairs.length)];
-    suggestions.push({
-      id:crypto.randomUUID(),
-      p1Id:r.p1.id,
-      p2Id:r.p2.id
-    });
   }
 }
 
@@ -415,15 +384,9 @@ function renderSuggestions(){
       <input type="number" id="sug2-${s.id}" style="width:50px">
       ${p2.name}
       <button class="small" onclick="addMatch('${p1.id}','${p2.id}',parseInt(document.getElementById('sug1-${s.id}').value),parseInt(document.getElementById('sug2-${s.id}').value))">✔</button>
-      <button class="small danger" onclick="removeSuggestion('${s.id}')">X</button>
     `;
     div.appendChild(row);
   });
-}
-
-function removeSuggestion(id){
-  suggestions=suggestions.filter(s=>s.id!==id);
-  renderSuggestions();
 }
 
 loadData();
