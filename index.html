@@ -3,294 +3,359 @@
 <head>
 <meta charset="UTF-8">
 <title>Ping Pong Tournament</title>
-
 <style>
 body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f4f6f9;
-}
-
-h2 {
-    margin-top: 0;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f6f9;
+  height: 100vh;
+  display: flex;
 }
 
 .container {
-    display: grid;
-    grid-template-columns: 45% 55%;
-    height: 100vh;
-    padding: 20px;
-    box-sizing: border-box;
-    gap: 20px;
+  display: flex;
+  width: 100%;
+  padding: 20px;
+  gap: 20px;
+  box-sizing: border-box;
 }
 
 .panel {
-    background: white;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.rankings-list {
-    overflow-y: auto;
-    flex-grow: 1;
+.left {
+  width: 40%;
 }
 
-.player-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px;
-    border-bottom: 1px solid #eee;
+.right {
+  width: 60%;
 }
 
-.player-row span {
-    font-size: 14px;
+h2 {
+  margin-top: 0;
+}
+
+.section {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.scrollable {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.player-row, .match-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
 }
 
 button {
-    cursor: pointer;
-    border: none;
-    padding: 6px 10px;
-    border-radius: 5px;
-    font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  background: #4a7cff;
+  color: white;
+  cursor: pointer;
 }
 
-button.primary {
-    background: #2d89ef;
-    color: white;
+button:hover {
+  opacity: 0.9;
 }
 
 button.danger {
-    background: #e74c3c;
-    color: white;
-}
-
-button.small {
-    font-size: 12px;
-    padding: 4px 6px;
+  background: #e74c3c;
 }
 
 input, select {
-    padding: 5px;
-    margin: 3px;
+  padding: 6px;
+  margin-right: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
 }
 
-.match-history {
-    overflow-y: auto;
-    max-height: 40%;
-    border-top: 1px solid #ddd;
-    margin-top: 10px;
-    padding-top: 10px;
-}
-
-.match-row {
-    font-size: 13px;
-    margin-bottom: 6px;
+.flex-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
 }
 </style>
 </head>
 <body>
-
 <div class="container">
+  <div class="panel left">
+    <h2>Rankings</h2>
+    <div class="section flex-row">
+      <input type="text" id="newPlayerName" placeholder="Player name">
+      <button onclick="addPlayer()">Add</button>
+    </div>
+    <div class="scrollable" id="rankings"></div>
+    <button class="danger" onclick="resetTournament()">Reset Tournament</button>
+  </div>
 
-    <!-- LEFT: Rankings + Player Management -->
-    <div class="panel">
-        <h2>Rankings</h2>
-
-        <div>
-            <input id="newPlayerName" placeholder="Player name">
-            <button class="primary" onclick="addPlayer()">Add</button>
-        </div>
-
-        <div class="rankings-list" id="rankings"></div>
-
-        <button class="danger" onclick="resetTournament()">Reset Tournament</button>
+  <div class="panel right">
+    <h2>Manual Match Entry</h2>
+    <div class="section">
+      <div class="flex-row">
+        <select id="player1"></select>
+        <input type="number" id="score1" placeholder="Score">
+        <span>vs</span>
+        <select id="player2"></select>
+        <input type="number" id="score2" placeholder="Score">
+        <button onclick="addMatch()">Add Match</button>
+      </div>
     </div>
 
-    <!-- RIGHT: Match Entry + History -->
-    <div class="panel">
-        <h2>Record Match</h2>
+    <h2>Suggested Matches</h2>
+    <div class="section scrollable" id="suggestions"></div>
 
-        <div>
-            <select id="player1"></select>
-            <input id="score1" type="number" placeholder="Score">
-        </div>
-
-        <div>
-            <select id="player2"></select>
-            <input id="score2" type="number" placeholder="Score">
-        </div>
-
-        <button class="primary" onclick="recordMatch()">Add Match</button>
-
-        <div class="match-history">
-            <h3>Match History</h3>
-            <div id="history"></div>
-        </div>
-    </div>
-
+    <h2>Match History</h2>
+    <div class="section scrollable" id="history"></div>
+  </div>
 </div>
 
 <script>
 let players = [];
 let matches = [];
 
-function createPlayer(name) {
-    return {
-        id: crypto.randomUUID(),
-        name: name,
-        rating: 1000,
-        games: 0,
-        wins: 0
-    };
-}
-
 function addPlayer() {
-    const nameInput = document.getElementById("newPlayerName");
-    const name = nameInput.value.trim();
-    if (!name) return;
+  const nameInput = document.getElementById("newPlayerName");
+  const name = nameInput.value.trim();
+  if (!name) return;
 
-    players.push(createPlayer(name));
-    nameInput.value = "";
-    render();
+  players.push({
+    id: crypto.randomUUID(),
+    name,
+    rating: 1000,
+    games: 0,
+    wins: 0
+  });
+
+  nameInput.value = "";
+  recalcStats();
+  render();
 }
 
 function removePlayer(id) {
-    players = players.filter(p => p.id !== id);
-    matches = matches.filter(m => m.player1Id !== id && m.player2Id !== id);
-    recalculateStats();
-    render();
+  players = players.filter(p => p.id !== id);
+  matches = matches.filter(m => m.player1Id !== id && m.player2Id !== id);
+  recalcStats();
+  render();
 }
 
-function recordMatch() {
-    const p1Id = document.getElementById("player1").value;
-    const p2Id = document.getElementById("player2").value;
-    const s1 = parseInt(document.getElementById("score1").value);
-    const s2 = parseInt(document.getElementById("score2").value);
+function addMatch() {
+  const p1 = document.getElementById("player1").value;
+  const p2 = document.getElementById("player2").value;
+  const s1 = parseInt(document.getElementById("score1").value);
+  const s2 = parseInt(document.getElementById("score2").value);
 
-    if (!p1Id || !p2Id) return;
-    if (p1Id === p2Id) {
-        alert("Player cannot play themselves.");
-        return;
-    }
-    if (isNaN(s1) || isNaN(s2)) return;
+  if (!p1 || !p2 || p1 === p2) return;
+  if (isNaN(s1) || isNaN(s2)) return;
 
-    matches.push({
-        id: crypto.randomUUID(),
-        player1Id: p1Id,
-        player2Id: p2Id,
-        score1: s1,
-        score2: s2
-    });
+  matches.push({
+    id: crypto.randomUUID(),
+    player1Id: p1,
+    player2Id: p2,
+    score1: s1,
+    score2: s2
+  });
 
-    document.getElementById("score1").value = "";
-    document.getElementById("score2").value = "";
+  document.getElementById("score1").value = "";
+  document.getElementById("score2").value = "";
 
-    recalculateStats();
-    render();
+  recalcStats();
+  render();
 }
 
 function deleteMatch(id) {
-    matches = matches.filter(m => m.id !== id);
-    recalculateStats();
-    render();
-}
-
-function recalculateStats() {
-    players.forEach(p => {
-        p.rating = 1000;
-        p.games = 0;
-        p.wins = 0;
-    });
-
-    matches.forEach(match => {
-        const p1 = players.find(p => p.id === match.player1Id);
-        const p2 = players.find(p => p.id === match.player2Id);
-        if (!p1 || !p2) return;
-
-        p1.games++;
-        p2.games++;
-
-        let k = 20;
-        let expected1 = 1 / (1 + Math.pow(10, (p2.rating - p1.rating) / 400));
-        let expected2 = 1 - expected1;
-
-        let actual1 = match.score1 > match.score2 ? 1 : 0;
-        let actual2 = 1 - actual1;
-
-        if (actual1 === 1) p1.wins++;
-        else p2.wins++;
-
-        p1.rating += k * (actual1 - expected1);
-        p2.rating += k * (actual2 - expected2);
-    });
+  matches = matches.filter(m => m.id !== id);
+  recalcStats();
+  render();
 }
 
 function resetTournament() {
-    if (!confirm("Are you sure? This will delete all matches and reset ratings.")) return;
+  if (!confirm("Are you sure? This will delete all matches and reset ratings.")) return;
 
-    matches = [];
-    recalculateStats();
-    render();
+  matches = [];
+  players.forEach(p => {
+    p.rating = 1000;
+    p.games = 0;
+    p.wins = 0;
+  });
+
+  render();
+}
+
+function recalcStats() {
+  players.forEach(p => {
+    p.rating = 1000;
+    p.games = 0;
+    p.wins = 0;
+  });
+
+  const K = 20;
+
+  for (let m of matches) {
+    const p1 = players.find(p => p.id === m.player1Id);
+    const p2 = players.find(p => p.id === m.player2Id);
+    if (!p1 || !p2) continue;
+
+    p1.games++;
+    p2.games++;
+
+    const expected1 = 1 / (1 + Math.pow(10, (p2.rating - p1.rating) / 400));
+    const expected2 = 1 - expected1;
+
+    const result1 = m.score1 > m.score2 ? 1 : 0;
+    const result2 = 1 - result1;
+
+    if (result1 === 1) p1.wins++;
+    if (result2 === 1) p2.wins++;
+
+    p1.rating += K * (result1 - expected1);
+    p2.rating += K * (result2 - expected2);
+  }
 }
 
 function render() {
-    // Sort for display only
-    const sorted = [...players].sort((a,b) => b.rating - a.rating);
+  renderRankings();
+  renderDropdowns();
+  renderHistory();
+  renderSuggestions();
+}
 
-    const rankingsDiv = document.getElementById("rankings");
-    rankingsDiv.innerHTML = "";
+function renderRankings() {
+  const container = document.getElementById("rankings");
+  container.innerHTML = "";
 
-    sorted.forEach((p, index) => {
-        const div = document.createElement("div");
-        div.className = "player-row";
-        div.innerHTML = `
-            <span>
-                ${index+1}. ${p.name}
-                | Rating: ${p.rating.toFixed(0)}
-                | W: ${p.wins}
-                | G: ${p.games}
-            </span>
-            <button class="danger small" onclick="removePlayer('${p.id}')">X</button>
-        `;
-        rankingsDiv.appendChild(div);
-    });
+  const sorted = [...players].sort((a,b) => b.rating - a.rating);
 
-    // Update dropdowns
-    const p1Select = document.getElementById("player1");
-    const p2Select = document.getElementById("player2");
-    p1Select.innerHTML = "";
-    p2Select.innerHTML = "";
+  sorted.forEach((p, i) => {
+    const row = document.createElement("div");
+    row.className = "player-row";
+    row.innerHTML = `
+      <div>#${i+1} ${p.name} — ${Math.round(p.rating)} | W:${p.wins} G:${p.games}</div>
+      <button class="danger">X</button>
+    `;
+    row.querySelector("button").onclick = () => removePlayer(p.id);
+    container.appendChild(row);
+  });
+}
 
-    players.forEach(p => {
-        p1Select.innerHTML += `<option value="${p.id}">${p.name}</option>`;
-        p2Select.innerHTML += `<option value="${p.id}">${p.name}</option>`;
-    });
+function renderDropdowns() {
+  const p1 = document.getElementById("player1");
+  const p2 = document.getElementById("player2");
 
-    // History
-    const historyDiv = document.getElementById("history");
-    historyDiv.innerHTML = "";
+  const selected1 = p1.value;
+  const selected2 = p2.value;
 
-    matches.forEach(match => {
-        const p1 = players.find(p => p.id === match.player1Id);
-        const p2 = players.find(p => p.id === match.player2Id);
-        if (!p1 || !p2) return;
+  p1.innerHTML = "";
+  p2.innerHTML = "";
 
-        const row = document.createElement("div");
-        row.className = "match-row";
-        row.innerHTML = `
-            ${p1.name} ${match.score1} - ${match.score2} ${p2.name}
-            <button class="danger small" onclick="deleteMatch('${match.id}')">Delete</button>
-        `;
-        historyDiv.appendChild(row);
-    });
+  players.forEach(p => {
+    const opt1 = document.createElement("option");
+    opt1.value = p.id;
+    opt1.textContent = p.name;
+    p1.appendChild(opt1);
+
+    const opt2 = document.createElement("option");
+    opt2.value = p.id;
+    opt2.textContent = p.name;
+    p2.appendChild(opt2);
+  });
+
+  if (players.find(p => p.id === selected1)) p1.value = selected1;
+  if (players.find(p => p.id === selected2)) p2.value = selected2;
+}
+
+function renderHistory() {
+  const container = document.getElementById("history");
+  container.innerHTML = "";
+
+  matches.forEach(m => {
+    const p1 = players.find(p => p.id === m.player1Id);
+    const p2 = players.find(p => p.id === m.player2Id);
+    if (!p1 || !p2) return;
+
+    const row = document.createElement("div");
+    row.className = "match-row";
+    row.innerHTML = `
+      <div>${p1.name} ${m.score1} - ${m.score2} ${p2.name}</div>
+      <button class="danger">Delete</button>
+    `;
+    row.querySelector("button").onclick = () => deleteMatch(m.id);
+    container.appendChild(row);
+  });
+}
+
+function renderSuggestions() {
+  const container = document.getElementById("suggestions");
+  container.innerHTML = "";
+
+  if (players.length < 2) return;
+
+  const suggestions = generateSuggestions(4);
+
+  suggestions.forEach(pair => {
+    const row = document.createElement("div");
+    row.className = "match-row";
+    row.textContent = `${pair[0].name} vs ${pair[1].name}`;
+    container.appendChild(row);
+  });
+}
+
+function generateSuggestions(count) {
+  const pairs = [];
+  const usedCounts = {};
+
+  players.forEach(p => usedCounts[p.id] = 0);
+
+  const historyCounts = {};
+  matches.forEach(m => {
+    const key = [m.player1Id, m.player2Id].sort().join("-");
+    historyCounts[key] = (historyCounts[key] || 0) + 1;
+  });
+
+  const sorted = [...players].sort((a,b) => b.rating - a.rating);
+
+  let attempts = 0;
+  while (pairs.length < count && attempts < 1000) {
+    attempts++;
+
+    const p1 = sorted[Math.floor(Math.random()*sorted.length)];
+    const p2 = sorted[Math.floor(Math.random()*sorted.length)];
+    if (p1.id === p2.id) continue;
+
+    const key = [p1.id, p2.id].sort().join("-");
+    const played = historyCounts[key] || 0;
+
+    if (usedCounts[p1.id] >= 2 || usedCounts[p2.id] >= 2) continue;
+
+    const ratingDiff = Math.abs(p1.rating - p2.rating);
+    const score = ratingDiff + played * 50 + Math.random()*50;
+
+    pairs.push({pair:[p1,p2],score});
+    usedCounts[p1.id]++;
+    usedCounts[p2.id]++;
+  }
+
+  return pairs.sort((a,b)=>a.score-b.score)
+              .slice(0,count)
+              .map(p=>p.pair);
 }
 
 render();
 </script>
-
 </body>
 </html>
