@@ -2,396 +2,398 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Ping Pong Elo Tournament</title>
+<title>Ping Pong Tournament</title>
 <style>
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f5f7fb;
+  font-family: Arial, sans-serif;
+  background: #f4f6fa;
   height: 100vh;
   overflow: hidden;
 }
 
 .container {
   display: flex;
-  height: 100vh;
-  gap: 20px;
+  height: 100%;
   padding: 20px;
+  gap: 20px;
   box-sizing: border-box;
 }
 
 .panel {
   background: white;
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
   padding: 20px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.left { width: 40%; }
-.right { width: 60%; }
+.left { flex: 1; }
+.right { flex: 1.2; }
 
-.section { margin-bottom: 18px; }
-.section h2 { margin: 0 0 10px 0; }
+h2 { margin-top: 0; }
 
-.scrollable { overflow-y: auto; }
+button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover { opacity: 0.9; }
+
+.danger { background: #e74c3c; color: white; }
+.secondary { background: #bdc3c7; }
+.primary { background: #3498db; color: white; }
+.retire { background: #7f8c8d; color: white; }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 14px;
 }
 
 th, td {
   padding: 6px;
-  text-align: left;
-  font-size: 14px;
+  text-align: center;
 }
 
-th { background: #f0f2f7; }
+th {
+  background: #f0f2f7;
+}
+
 tr:nth-child(even) { background: #fafbff; }
 
-.rank-1 { background: linear-gradient(90deg, gold, #fff8dc); font-weight: bold; }
-.rank-2 { background: linear-gradient(90deg, silver, #f8f8f8); }
-.rank-3 { background: linear-gradient(90deg, #cd7f32, #fdf6e3); }
+.rank1 { background: linear-gradient(90deg,#fff8dc,#fff3b0); font-weight: bold; }
+.rank2 { background: linear-gradient(90deg,#f0f0f0,#e6e6e6); font-weight: bold; }
+.rank3 { background: linear-gradient(90deg,#ffe5cc,#ffd1a3); font-weight: bold; }
 
-.retired {
-  opacity: 0.5;
-  background: #e9ecef !important;
+.retired-row {
+  opacity: 0.4;
 }
 
-button {
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  background: #4c6ef5;
-  color: white;
+.scroll {
+  overflow-y: auto;
+  flex: 1;
 }
 
-button.small { padding: 4px 8px; font-size: 12px; }
-button.danger { background: #e03131; }
-button.warning { background: #f59f00; }
-
-input, select {
-  padding: 5px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+.section {
+  margin-bottom: 20px;
 }
 
-.match-row {
+.match-card {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  padding: 6px;
   margin-bottom: 6px;
-  font-size: 14px;
+  background: #f7f9ff;
+  border-radius: 6px;
+}
+
+input[type=number] {
+  width: 50px;
 }
 </style>
 </head>
 <body>
+
 <div class="container">
 
 <div class="panel left">
+<h2>Leaderboard</h2>
 
-  <div class="section">
-    <h2>Leaderboard</h2>
-    <div class="scrollable" style="max-height: 480px;">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Name</th>
-            <th>Rating</th>
-            <th>W</th>
-            <th>L</th>
-            <th>GP</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="leaderboardBody"></tbody>
-      </table>
-    </div>
-  </div>
+<div class="section">
+<input id="playerName" placeholder="Player name">
+<button class="primary" onclick="addPlayer()">Add</button>
+<button class="danger" onclick="resetTournament()">Reset</button>
+</div>
 
-  <div class="section">
-    <input id="playerName" placeholder="Player name">
-    <button onclick="addPlayer()">Add Player</button>
-    <button class="danger" onclick="resetTournament()">Reset</button>
-  </div>
-
+<div class="scroll">
+<table>
+<thead>
+<tr>
+<th>#</th><th>Name</th><th>ELO</th><th>GP</th><th>W</th><th>L</th><th></th>
+</tr>
+</thead>
+<tbody id="leaderboard"></tbody>
+</table>
+</div>
 </div>
 
 <div class="panel right">
 
-  <div class="section">
-    <h2>Add Match</h2>
-    <select id="p1"></select>
-    <input id="s1" type="number" placeholder="Score">
-    <select id="p2"></select>
-    <input id="s2" type="number" placeholder="Score">
-    <button onclick="addMatch()">Add</button>
-  </div>
+<div class="section">
+<h2>Manual Match</h2>
+<select id="p1"></select>
+<input id="s1" type="number" min="0">
+<select id="p2"></select>
+<input id="s2" type="number" min="0">
+<button class="primary" onclick="addMatch()">Add Match</button>
+</div>
 
-  <div class="section">
-    <h2>Suggested Matches</h2>
-    <div id="suggestions" class="scrollable" style="max-height:220px;"></div>
-  </div>
+<div class="section">
+<h2>Suggested Matches</h2>
+<div id="suggestions" class="scroll"></div>
+</div>
 
-  <div class="section">
-    <h2>Match History</h2>
-    <div id="history" class="scrollable" style="max-height:260px;"></div>
-  </div>
+<div class="section">
+<h2>Match History</h2>
+<div id="history" class="scroll"></div>
+</div>
 
 </div>
 </div>
 
 <script>
-let players = [];
-let matches = [];
-let suggestions = [];
+const START_RATING = 1000
 
-function saveData() {
-  localStorage.setItem("pp_players", JSON.stringify(players));
-  localStorage.setItem("pp_matches", JSON.stringify(matches));
+let players = []
+let matches = []
+let suggestions = []
+
+function save() {
+  localStorage.setItem("pingpong", JSON.stringify({players,matches,suggestions}))
 }
 
-function loadData() {
-  const p = localStorage.getItem("pp_players");
-  const m = localStorage.getItem("pp_matches");
-  if (p) players = JSON.parse(p);
-  if (m) matches = JSON.parse(m);
-}
-
-function addPlayer() {
-  const nameInput = document.getElementById("playerName");
-  const name = nameInput.value.trim();
-  if (!name) return;
-
-  players.push({
-    id: crypto.randomUUID(),
-    name,
-    rating: 1000,
-    games: 0,
-    wins: 0,
-    losses: 0,
-    retired: false
-  });
-
-  nameInput.value = "";
-  recalcStats();
-  saveData();
-  render();
-}
-
-function retirePlayer(id) {
-  const player = players.find(p => p.id === id);
-  if (!player) return;
-  player.retired = true;
-  saveData();
-  render();
-}
-
-function removePlayer(id) {
-  players = players.filter(p => p.id !== id);
-  matches = matches.filter(m => m.player1Id !== id && m.player2Id !== id);
-  recalcStats();
-  saveData();
-  render();
-}
-
-function addMatch(p1Id, p2Id, score1, score2) {
-  if (!p1Id) {
-    p1Id = document.getElementById("p1").value;
-    p2Id = document.getElementById("p2").value;
-    score1 = parseInt(document.getElementById("s1").value);
-    score2 = parseInt(document.getElementById("s2").value);
+function load() {
+  const data = localStorage.getItem("pingpong")
+  if (data) {
+    const parsed = JSON.parse(data)
+    players = parsed.players || []
+    matches = parsed.matches || []
+    suggestions = parsed.suggestions || []
   }
-
-  if (p1Id === p2Id) return;
-  if (isNaN(score1) || isNaN(score2)) return;
-
-  matches.push({
-    id: crypto.randomUUID(),
-    player1Id: p1Id,
-    player2Id: p2Id,
-    score1,
-    score2
-  });
-
-  recalcStats();
-  saveData();
-  render();
-}
-
-function deleteMatch(id) {
-  matches = matches.filter(m => m.id !== id);
-  recalcStats();
-  saveData();
-  render();
-}
-
-function resetTournament() {
-  if (!confirm("Are you sure? This will delete all matches and reset ratings.")) return;
-  matches = [];
-  players.forEach(p => {
-    p.rating = 1000;
-    p.games = 0;
-    p.wins = 0;
-    p.losses = 0;
-  });
-  saveData();
-  render();
-}
-
-function getK(player) {
-  if (player.games < 5) return 40;
-  if (player.games < 10) return 30;
-  return 20;
 }
 
 function recalcStats() {
-  players.forEach(p => {
-    p.rating = 1000;
-    p.games = 0;
-    p.wins = 0;
-    p.losses = 0;
-  });
+  players.forEach(p=>{
+    p.rating = START_RATING
+    p.games = 0
+    p.wins = 0
+  })
 
-  matches.forEach(m => {
-    const p1 = players.find(p => p.id === m.player1Id);
-    const p2 = players.find(p => p.id === m.player2Id);
-    if (!p1 || !p2) return;
+  matches.forEach(m=>{
+    const p1 = players.find(p=>p.id===m.player1Id)
+    const p2 = players.find(p=>p.id===m.player2Id)
+    if(!p1||!p2) return
 
-    const expected1 = 1 / (1 + Math.pow(10, (p2.rating - p1.rating) / 400));
-    const result1 = m.score1 > m.score2 ? 1 : 0;
+    const K1 = p1.games < 5 ? 40 : p1.games < 15 ? 30 : 20
+    const K2 = p2.games < 5 ? 40 : p2.games < 15 ? 30 : 20
 
-    const k1 = getK(p1);
-    const k2 = getK(p2);
+    const expected1 = 1/(1+Math.pow(10,(p2.rating-p1.rating)/400))
+    const expected2 = 1-expected1
 
-    p1.rating += k1 * (result1 - expected1);
-    p2.rating += k2 * ((1 - result1) - (1 - expected1));
+    const actual1 = m.score1>m.score2?1:0
+    const actual2 = 1-actual1
 
-    p1.games++;
-    p2.games++;
+    p1.rating += K1*(actual1-expected1)
+    p2.rating += K2*(actual2-expected2)
 
-    if (result1 === 1) { p1.wins++; p2.losses++; }
-    else { p2.wins++; p1.losses++; }
-  });
-}
-
-function render() {
-  renderLeaderboard();
-  renderDropdowns();
-  renderHistory();
-  generateSuggestions();
-  renderSuggestions();
+    p1.games++
+    p2.games++
+    if(actual1) p1.wins++
+    if(actual2) p2.wins++
+  })
 }
 
 function renderLeaderboard() {
-  const body = document.getElementById("leaderboardBody");
-  body.innerHTML = "";
+  const tbody = document.getElementById("leaderboard")
+  tbody.innerHTML=""
 
-  const active = players.filter(p => !p.retired).sort((a,b)=>b.rating-a.rating);
-  const retired = players.filter(p => p.retired).sort((a,b)=>b.rating-a.rating);
+  const active = players.filter(p=>!p.retired)
+  const retired = players.filter(p=>p.retired)
 
-  const combined = [...active, ...retired];
+  active.sort((a,b)=>b.rating-a.rating)
 
-  combined.forEach((p,index)=>{
-    const tr=document.createElement("tr");
+  const ordered = [...active,...retired]
 
-    if (!p.retired) {
-      if (index===0) tr.className="rank-1";
-      if (index===1) tr.className="rank-2";
-      if (index===2) tr.className="rank-3";
-    } else {
-      tr.className="retired";
-    }
+  ordered.forEach((p,i)=>{
+    const tr=document.createElement("tr")
+    if(i===0) tr.classList.add("rank1")
+    if(i===1) tr.classList.add("rank2")
+    if(i===2) tr.classList.add("rank3")
+    if(p.retired) tr.classList.add("retired-row")
+
+    const losses = p.games-p.wins
 
     tr.innerHTML=`
-      <td>${index+1}</td>
-      <td>${p.name}${p.retired?" (Retired)":""}</td>
-      <td>${Math.round(p.rating)}</td>
-      <td>${p.wins}</td>
-      <td>${p.losses}</td>
-      <td>${p.games}</td>
-      <td>
-        ${!p.retired ? `<button class="small warning" onclick="retirePlayer('${p.id}')">Retire</button>` : ""}
-        <button class="small danger" onclick="removePlayer('${p.id}')">X</button>
-      </td>
-    `;
-    body.appendChild(tr);
-  });
+    <td>${i+1}</td>
+    <td>${p.name}</td>
+    <td>${Math.round(p.rating)}</td>
+    <td>${p.games}</td>
+    <td>${p.wins}</td>
+    <td>${losses}</td>
+    <td>
+      <button class="retire" onclick="toggleRetire('${p.id}')">${p.retired?"Unretire":"Retire"}</button>
+      <button class="danger" onclick="removePlayer('${p.id}')">X</button>
+    </td>`
+    tbody.appendChild(tr)
+  })
 }
 
 function renderDropdowns() {
-  const p1=document.getElementById("p1");
-  const p2=document.getElementById("p2");
-  p1.innerHTML=""; p2.innerHTML="";
-  players.filter(p=>!p.retired).forEach(p=>{
-    const o1=document.createElement("option");
-    o1.value=p.id;o1.textContent=p.name;p1.appendChild(o1);
-    const o2=document.createElement("option");
-    o2.value=p.id;o2.textContent=p.name;p2.appendChild(o2);
-  });
+  const selects=[document.getElementById("p1"),document.getElementById("p2")]
+  selects.forEach(sel=>{
+    const val=sel.value
+    sel.innerHTML=""
+    players.filter(p=>!p.retired).forEach(p=>{
+      const opt=document.createElement("option")
+      opt.value=p.id
+      opt.textContent=p.name
+      sel.appendChild(opt)
+    })
+    sel.value=val
+  })
 }
 
 function renderHistory() {
-  const div=document.getElementById("history");
-  div.innerHTML="";
+  const div=document.getElementById("history")
+  div.innerHTML=""
   matches.forEach(m=>{
-    const p1=players.find(p=>p.id===m.player1Id);
-    const p2=players.find(p=>p.id===m.player2Id);
-    if(!p1||!p2)return;
-    const row=document.createElement("div");
-    row.className="match-row";
-    row.innerHTML=`${p1.name} ${m.score1} - ${m.score2} ${p2.name}
-    <button class="small danger" onclick="deleteMatch('${m.id}')">Delete</button>`;
-    div.appendChild(row);
-  });
+    const p1=players.find(p=>p.id===m.player1Id)
+    const p2=players.find(p=>p.id===m.player2Id)
+    if(!p1||!p2) return
+
+    const row=document.createElement("div")
+    row.className="match-card"
+    row.innerHTML=`
+      <div>${p1.name} ${m.score1} - ${m.score2} ${p2.name}</div>
+      <button class="danger" onclick="deleteMatch('${m.id}')">Delete</button>`
+    div.appendChild(row)
+  })
 }
 
-function generateSuggestions() {
-  suggestions=[];
-  const activePlayers = players.filter(p=>!p.retired);
-  if(activePlayers.length<2)return;
+function renderSuggestions() {
+  const div=document.getElementById("suggestions")
+  div.innerHTML=""
 
-  for(let i=0;i<activePlayers.length;i++){
-    for(let j=i+1;j<activePlayers.length;j++){
-      suggestions.push({
-        id:crypto.randomUUID(),
-        p1Id:activePlayers[i].id,
-        p2Id:activePlayers[j].id
-      });
-      if(suggestions.length>=4)return;
-    }
+  refillSuggestions()
+
+  suggestions.forEach(s=>{
+    const p1=players.find(p=>p.id===s.player1Id)
+    const p2=players.find(p=>p.id===s.player2Id)
+    if(!p1||!p2||p1.retired||p2.retired) return
+
+    const row=document.createElement("div")
+    row.className="match-card"
+    row.innerHTML=`
+      <div>${p1.name} <input type="number" min="0" id="s1_${s.id}"> -
+      <input type="number" min="0" id="s2_${s.id}"> ${p2.name}</div>
+      <div>
+      <button class="primary" onclick="playSuggestion('${s.id}')">✓</button>
+      <button class="secondary" onclick="removeSuggestion('${s.id}')">✕</button>
+      </div>`
+    div.appendChild(row)
+  })
+}
+
+function refillSuggestions() {
+  suggestions = suggestions.filter(s=>{
+    const p1=players.find(p=>p.id===s.player1Id)
+    const p2=players.find(p=>p.id===s.player2Id)
+    return p1 && p2 && !p1.retired && !p2.retired
+  })
+
+  while(suggestions.length<4){
+    const active=players.filter(p=>!p.retired)
+    if(active.length<2) break
+
+    const p1=active[Math.floor(Math.random()*active.length)]
+    let p2=active[Math.floor(Math.random()*active.length)]
+    if(p1.id===p2.id) continue
+
+    suggestions.push({
+      id:crypto.randomUUID(),
+      player1Id:p1.id,
+      player2Id:p2.id
+    })
   }
 }
 
-function renderSuggestions(){
-  const div=document.getElementById("suggestions");
-  div.innerHTML="";
-  suggestions.forEach(s=>{
-    const p1=players.find(p=>p.id===s.p1Id);
-    const p2=players.find(p=>p.id===s.p2Id);
-    if(!p1||!p2)return;
-    const row=document.createElement("div");
-    row.className="match-row";
-    row.innerHTML=`
-      ${p1.name}
-      <input type="number" id="sug1-${s.id}" style="width:50px">
-      -
-      <input type="number" id="sug2-${s.id}" style="width:50px">
-      ${p2.name}
-      <button class="small" onclick="addMatch('${p1.id}','${p2.id}',parseInt(document.getElementById('sug1-${s.id}').value),parseInt(document.getElementById('sug2-${s.id}').value))">✔</button>
-    `;
-    div.appendChild(row);
-  });
+function render() {
+  recalcStats()
+  renderLeaderboard()
+  renderDropdowns()
+  renderHistory()
+  renderSuggestions()
+  save()
 }
 
-loadData();
-recalcStats();
-render();
+function addPlayer(){
+  const name=document.getElementById("playerName").value.trim()
+  if(!name) return
+  players.push({id:crypto.randomUUID(),name,rating:START_RATING,games:0,wins:0,retired:false})
+  document.getElementById("playerName").value=""
+  render()
+}
+
+function removePlayer(id){
+  players=players.filter(p=>p.id!==id)
+  matches=matches.filter(m=>m.player1Id!==id && m.player2Id!==id)
+  suggestions=suggestions.filter(s=>s.player1Id!==id && s.player2Id!==id)
+  render()
+}
+
+function toggleRetire(id){
+  const p=players.find(p=>p.id===id)
+  if(!p) return
+  p.retired=!p.retired
+  render()
+}
+
+function addMatch(){
+  const p1=document.getElementById("p1").value
+  const p2=document.getElementById("p2").value
+  const s1=parseInt(document.getElementById("s1").value)
+  const s2=parseInt(document.getElementById("s2").value)
+  if(!p1||!p2||p1===p2||isNaN(s1)||isNaN(s2)) return
+
+  matches.push({id:crypto.randomUUID(),player1Id:p1,player2Id:p2,score1:s1,score2:s2})
+  document.getElementById("s1").value=""
+  document.getElementById("s2").value=""
+  render()
+}
+
+function deleteMatch(id){
+  matches=matches.filter(m=>m.id!==id)
+  render()
+}
+
+function playSuggestion(id){
+  const s=suggestions.find(x=>x.id===id)
+  if(!s) return
+  const s1=parseInt(document.getElementById("s1_"+id).value)
+  const s2=parseInt(document.getElementById("s2_"+id).value)
+  if(isNaN(s1)||isNaN(s2)) return
+  matches.push({id:crypto.randomUUID(),player1Id:s.player1Id,player2Id:s.player2Id,score1:s1,score2:s2})
+  suggestions=suggestions.filter(x=>x.id!==id)
+  render()
+}
+
+function removeSuggestion(id){
+  suggestions=suggestions.filter(x=>x.id!==id)
+  render()
+}
+
+function resetTournament(){
+  if(confirm("Are you sure? This will delete all matches and reset ratings.")){
+    matches=[]
+    suggestions=[]
+    players.forEach(p=>{
+      p.rating=START_RATING
+      p.games=0
+      p.wins=0
+    })
+    render()
+  }
+}
+
+load()
+render()
 </script>
+
 </body>
 </html>
