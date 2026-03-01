@@ -96,6 +96,7 @@ td {
 </style>
 </head>
 <body>
+
 <div class="container">
 
 <div class="panel left">
@@ -103,12 +104,11 @@ td {
 
 <div style="display:flex; gap:6px; margin-bottom:10px;">
 <input type="text" id="newPlayerName" placeholder="Player name">
-<button onclick="addPlayer()">Add</button>
+<button id="addPlayerBtn">Add</button>
 </div>
 
 <div id="rankings" class="scrollable" style="flex:1;"></div>
-
-<button class="danger" onclick="resetTournament()">Reset Tournament</button>
+<button class="danger" id="resetBtn">Reset Tournament</button>
 </div>
 
 
@@ -121,17 +121,17 @@ td {
 <span>vs</span>
 <select id="player2"></select>
 <input type="number" id="score2" placeholder="Score">
-<button onclick="addMatch()">Add</button>
+<button id="addMatchBtn">Add</button>
 </div>
 
 <h2>Suggested Matches</h2>
-<div id="suggestions" class="scrollable" style="max-height:150px;"></div>
+<div id="suggestionsContainer" class="scrollable" style="max-height:150px;"></div>
 
 <h2>Match History</h2>
-<div id="history" class="scrollable" style="max-height:200px;"></div>
+<div id="matchHistoryContainer" class="scrollable" style="max-height:200px;"></div>
 
 <h2>Stats</h2>
-<div id="stats"></div>
+<div id="statsContainer"></div>
 
 </div>
 </div>
@@ -142,12 +142,39 @@ let players = [];
 let matches = [];
 let suggestions = [];
 
-/* =========================
+/* =====================
+   DOM REFERENCES
+===================== */
+
+const rankingsDiv = document.getElementById("rankings");
+const suggestionsDiv = document.getElementById("suggestionsContainer");
+const historyDiv = document.getElementById("matchHistoryContainer");
+const statsDiv = document.getElementById("statsContainer");
+
+const newPlayerInput = document.getElementById("newPlayerName");
+const addPlayerBtn = document.getElementById("addPlayerBtn");
+const resetBtn = document.getElementById("resetBtn");
+
+const player1Select = document.getElementById("player1");
+const player2Select = document.getElementById("player2");
+const score1Input = document.getElementById("score1");
+const score2Input = document.getElementById("score2");
+const addMatchBtn = document.getElementById("addMatchBtn");
+
+/* =====================
+   EVENTS
+===================== */
+
+addPlayerBtn.onclick = addPlayer;
+resetBtn.onclick = resetTournament;
+addMatchBtn.onclick = addMatch;
+
+/* =====================
    PLAYER MANAGEMENT
-========================= */
+===================== */
 
 function addPlayer(){
-  const name = newPlayerName.value.trim();
+  const name = newPlayerInput.value.trim();
   if(!name) return;
 
   players.push({
@@ -159,7 +186,7 @@ function addPlayer(){
     losses:0
   });
 
-  newPlayerName.value="";
+  newPlayerInput.value="";
   recalcStats();
   regenerateSuggestions();
   render();
@@ -181,15 +208,15 @@ function resetTournament(){
   render();
 }
 
-/* =========================
-   MATCH SYSTEM
-========================= */
+/* =====================
+   MATCHES
+===================== */
 
 function addMatch(){
-  const p1=player1.value;
-  const p2=player2.value;
-  const s1=parseInt(score1.value);
-  const s2=parseInt(score2.value);
+  const p1=player1Select.value;
+  const p2=player2Select.value;
+  const s1=parseInt(score1Input.value);
+  const s2=parseInt(score2Input.value);
 
   if(!p1||!p2||p1===p2) return;
   if(isNaN(s1)||isNaN(s2)) return;
@@ -202,27 +229,8 @@ function addMatch(){
     score2:s2
   });
 
-  score1.value="";
-  score2.value="";
-
-  recalcStats();
-  regenerateSuggestions();
-  render();
-}
-
-function addMatchFromSuggestion(index){
-  const s=suggestions[index];
-  const sc1=parseInt(document.getElementById(`s1_${index}`).value);
-  const sc2=parseInt(document.getElementById(`s2_${index}`).value);
-  if(isNaN(sc1)||isNaN(sc2)) return;
-
-  matches.push({
-    id: crypto.randomUUID(),
-    player1Id:s.p1.id,
-    player2Id:s.p2.id,
-    score1:sc1,
-    score2:sc2
-  });
+  score1Input.value="";
+  score2Input.value="";
 
   recalcStats();
   regenerateSuggestions();
@@ -236,9 +244,9 @@ function deleteMatch(id){
   render();
 }
 
-/* =========================
-   RATING RECALCULATION
-========================= */
+/* =====================
+   ELO RECALCULATION
+===================== */
 
 function recalcStats(){
   players.forEach(p=>{
@@ -263,31 +271,22 @@ function recalcStats(){
     const r2=1-r1;
 
     if(r1){p1.wins++; p2.losses++;}
-    else {p2.wins++; p1.losses++;}
+    else{p2.wins++; p1.losses++;}
 
     p1.rating+=K*(r1-e1);
     p2.rating+=K*(r2-(1-e1));
   }
 }
 
-/* =========================
+/* =====================
    SUGGESTIONS
-========================= */
+===================== */
 
 function regenerateSuggestions(){
   suggestions=[];
   if(players.length<2) return;
 
   const sorted=[...players].sort((a,b)=>b.rating-a.rating);
-  const pairCounts={};
-
-  matches.forEach(m=>{
-    const key=[m.player1Id,m.player2Id].sort().join("-");
-    pairCounts[key]=(pairCounts[key]||0)+1;
-  });
-
-  const used={};
-  players.forEach(p=>used[p.id]=0);
 
   let attempts=0;
   while(suggestions.length<4 && attempts<200){
@@ -296,21 +295,18 @@ function regenerateSuggestions(){
     const p2=sorted[Math.floor(Math.random()*sorted.length)];
     if(p1.id===p2.id) continue;
 
-    const key=[p1.id,p2.id].sort().join("-");
-    const played=pairCounts[key]||0;
-
-    if(used[p1.id]>=2||used[p2.id]>=2) continue;
-    if(played>3) continue;
+    if(suggestions.some(s=>
+      (s.p1.id===p1.id && s.p2.id===p2.id) ||
+      (s.p1.id===p2.id && s.p2.id===p1.id)
+    )) continue;
 
     suggestions.push({p1,p2});
-    used[p1.id]++;
-    used[p2.id]++;
   }
 }
 
-/* =========================
-   RENDERING
-========================= */
+/* =====================
+   RENDER
+===================== */
 
 function render(){
   renderRankings();
@@ -322,8 +318,8 @@ function render(){
 
 function renderRankings(){
   const sorted=[...players].sort((a,b)=>b.rating-a.rating);
-  rankings.innerHTML="<table><tr><th>#</th><th>Name</th><th>Rating</th><th>P</th><th>W</th><th>L</th><th>%</th><th></th></tr></table>";
-  const table=rankings.querySelector("table");
+  rankingsDiv.innerHTML="<table><tr><th>#</th><th>Name</th><th>Rating</th><th>P</th><th>W</th><th>L</th><th>%</th><th></th></tr></table>";
+  const table=rankingsDiv.querySelector("table");
 
   sorted.forEach((p,i)=>{
     const row=document.createElement("tr");
@@ -349,30 +345,35 @@ function renderRankings(){
 }
 
 function renderDropdowns(){
-  const s1=player1.value;
-  const s2=player2.value;
-  player1.innerHTML="";
-  player2.innerHTML="";
+  const s1=player1Select.value;
+  const s2=player2Select.value;
+
+  player1Select.innerHTML="";
+  player2Select.innerHTML="";
+
   players.forEach(p=>{
     const o1=document.createElement("option");
     o1.value=p.id;
     o1.textContent=p.name;
-    player1.appendChild(o1);
+    player1Select.appendChild(o1);
+
     const o2=document.createElement("option");
     o2.value=p.id;
     o2.textContent=p.name;
-    player2.appendChild(o2);
+    player2Select.appendChild(o2);
   });
-  if(players.find(p=>p.id===s1)) player1.value=s1;
-  if(players.find(p=>p.id===s2)) player2.value=s2;
+
+  if(players.find(p=>p.id===s1)) player1Select.value=s1;
+  if(players.find(p=>p.id===s2)) player2Select.value=s2;
 }
 
 function renderHistory(){
-  history.innerHTML="";
+  historyDiv.innerHTML="";
   matches.forEach(m=>{
     const p1=players.find(p=>p.id===m.player1Id);
     const p2=players.find(p=>p.id===m.player2Id);
     if(!p1||!p2) return;
+
     const div=document.createElement("div");
     div.className="match-row";
     div.innerHTML=`
@@ -380,7 +381,7 @@ function renderHistory(){
       <button class="danger">Delete</button>
     `;
     div.querySelector("button").onclick=()=>deleteMatch(m.id);
-    history.appendChild(div);
+    historyDiv.appendChild(div);
   });
 }
 
@@ -398,24 +399,41 @@ function renderSuggestions(){
       <button>Record</button>
       <button class="secondary">Dismiss</button>
     `;
-    row.querySelector("button").onclick=()=>addMatchFromSuggestion(i);
+    row.querySelector("button").onclick=()=>{
+      const sc1=parseInt(document.getElementById(`s1_${i}`).value);
+      const sc2=parseInt(document.getElementById(`s2_${i}`).value);
+      if(isNaN(sc1)||isNaN(sc2)) return;
+
+      matches.push({
+        id: crypto.randomUUID(),
+        player1Id:s.p1.id,
+        player2Id:s.p2.id,
+        score1:sc1,
+        score2:sc2
+      });
+
+      recalcStats();
+      regenerateSuggestions();
+      render();
+    };
     row.querySelectorAll("button")[1].onclick=()=>{
       suggestions.splice(i,1);
       renderSuggestions();
     };
+
     suggestionsDiv.appendChild(row);
   });
 }
 
 function renderStats(){
-  stats.innerHTML="";
+  statsDiv.innerHTML="";
   if(players.length===0) return;
 
   const highest=[...players].sort((a,b)=>b.rating-a.rating)[0];
   const mostWins=[...players].sort((a,b)=>b.wins-a.wins)[0];
   const mostGames=[...players].sort((a,b)=>b.games-a.games)[0];
 
-  stats.innerHTML=`
+  statsDiv.innerHTML=`
     <div class="stat-box">🏆 Highest Rating: ${highest.name} (${Math.round(highest.rating)})</div>
     <div class="stat-box">🔥 Most Wins: ${mostWins.name} (${mostWins.wins})</div>
     <div class="stat-box">🎮 Most Active: ${mostGames.name} (${mostGames.games} games)</div>
