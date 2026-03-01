@@ -30,25 +30,13 @@ body {
   overflow: hidden;
 }
 
-.left {
-  width: 40%;
-}
+.left { width: 40%; }
+.right { width: 60%; }
 
-.right {
-  width: 60%;
-}
+.section { margin-bottom: 18px; }
+.section h2 { margin: 0 0 10px 0; }
 
-.section {
-  margin-bottom: 18px;
-}
-
-.section h2 {
-  margin: 0 0 10px 0;
-}
-
-.scrollable {
-  overflow-y: auto;
-}
+.scrollable { overflow-y: auto; }
 
 table {
   width: 100%;
@@ -61,23 +49,16 @@ th, td {
   font-size: 14px;
 }
 
-th {
-  background: #f0f2f7;
-}
-
-tr:nth-child(even) {
-  background: #fafbff;
-}
+th { background: #f0f2f7; }
+tr:nth-child(even) { background: #fafbff; }
 
 .rank-1 {
   background: linear-gradient(90deg, gold, #fff8dc);
   font-weight: bold;
 }
-
 .rank-2 {
   background: linear-gradient(90deg, silver, #f8f8f8);
 }
-
 .rank-3 {
   background: linear-gradient(90deg, #cd7f32, #fdf6e3);
 }
@@ -96,9 +77,7 @@ button.small {
   font-size: 12px;
 }
 
-button.danger {
-  background: #e03131;
-}
+button.danger { background: #e03131; }
 
 input, select {
   padding: 5px;
@@ -113,82 +92,81 @@ input, select {
   margin-bottom: 6px;
   font-size: 14px;
 }
-
-.stat-box {
-  background: #f0f2f7;
-  padding: 8px;
-  border-radius: 8px;
-  margin-bottom: 6px;
-  font-size: 14px;
-}
 </style>
 </head>
 <body>
 <div class="container">
 
-  <div class="panel left">
+<div class="panel left">
 
-    <div class="section">
-      <h2>Leaderboard</h2>
-      <div class="scrollable" style="max-height: 300px;">
-        <table id="leaderboardTable">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Name</th>
-              <th>Rating</th>
-              <th>W</th>
-              <th>L</th>
-              <th>GP</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+  <div class="section">
+    <h2>Leaderboard</h2>
+    <div class="scrollable" style="max-height: 420px;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Rating</th>
+            <th>W</th>
+            <th>L</th>
+            <th>GP</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody"></tbody>
+      </table>
     </div>
-
-    <div class="section">
-      <input id="playerName" placeholder="Player name">
-      <button onclick="addPlayer()">Add Player</button>
-      <button class="danger" onclick="resetTournament()">Reset Tournament</button>
-    </div>
-
-    <div class="section">
-      <h2>Stats</h2>
-      <div id="stats"></div>
-    </div>
-
   </div>
 
-  <div class="panel right">
-
-    <div class="section">
-      <h2>Add Match</h2>
-      <select id="p1"></select>
-      <input id="s1" type="number" placeholder="Score">
-      <select id="p2"></select>
-      <input id="s2" type="number" placeholder="Score">
-      <button onclick="addMatch()">Add</button>
-    </div>
-
-    <div class="section">
-      <h2>Suggested Matches</h2>
-      <div id="suggestions" class="scrollable" style="max-height: 180px;"></div>
-    </div>
-
-    <div class="section">
-      <h2>Match History</h2>
-      <div id="history" class="scrollable" style="max-height: 280px;"></div>
-    </div>
-
+  <div class="section">
+    <input id="playerName" placeholder="Player name">
+    <button onclick="addPlayer()">Add Player</button>
+    <button class="danger" onclick="resetTournament()">Reset</button>
   </div>
+
+</div>
+
+<div class="panel right">
+
+  <div class="section">
+    <h2>Add Match</h2>
+    <select id="p1"></select>
+    <input id="s1" type="number" placeholder="Score">
+    <select id="p2"></select>
+    <input id="s2" type="number" placeholder="Score">
+    <button onclick="addMatch()">Add</button>
+  </div>
+
+  <div class="section">
+    <h2>Suggested Matches</h2>
+    <div id="suggestions" class="scrollable" style="max-height:220px;"></div>
+  </div>
+
+  <div class="section">
+    <h2>Match History</h2>
+    <div id="history" class="scrollable" style="max-height:260px;"></div>
+  </div>
+
+</div>
 </div>
 
 <script>
 let players = [];
 let matches = [];
 let suggestions = [];
+
+function saveData() {
+  localStorage.setItem("pp_players", JSON.stringify(players));
+  localStorage.setItem("pp_matches", JSON.stringify(matches));
+}
+
+function loadData() {
+  const p = localStorage.getItem("pp_players");
+  const m = localStorage.getItem("pp_matches");
+  if (p) players = JSON.parse(p);
+  if (m) matches = JSON.parse(m);
+}
 
 function addPlayer() {
   const nameInput = document.getElementById("playerName");
@@ -206,6 +184,7 @@ function addPlayer() {
 
   nameInput.value = "";
   recalcStats();
+  saveData();
   render();
 }
 
@@ -213,6 +192,7 @@ function removePlayer(id) {
   players = players.filter(p => p.id !== id);
   matches = matches.filter(m => m.player1Id !== id && m.player2Id !== id);
   recalcStats();
+  saveData();
   render();
 }
 
@@ -236,12 +216,14 @@ function addMatch(p1Id, p2Id, score1, score2) {
   });
 
   recalcStats();
+  saveData();
   render();
 }
 
 function deleteMatch(id) {
   matches = matches.filter(m => m.id !== id);
   recalcStats();
+  saveData();
   render();
 }
 
@@ -256,6 +238,7 @@ function resetTournament() {
     p.losses = 0;
   });
 
+  saveData();
   render();
 }
 
@@ -279,16 +262,13 @@ function recalcStats() {
     if (!p1 || !p2) return;
 
     const expected1 = 1 / (1 + Math.pow(10, (p2.rating - p1.rating) / 400));
-    const expected2 = 1 - expected1;
-
     const result1 = m.score1 > m.score2 ? 1 : 0;
-    const result2 = 1 - result1;
 
     const k1 = getK(p1);
     const k2 = getK(p2);
 
     p1.rating += k1 * (result1 - expected1);
-    p2.rating += k2 * (result2 - expected2);
+    p2.rating += k2 * ((1 - result1) - (1 - expected1));
 
     p1.games++;
     p2.games++;
@@ -309,20 +289,19 @@ function render() {
   renderHistory();
   generateSuggestions();
   renderSuggestions();
-  renderStats();
 }
 
 function renderLeaderboard() {
-  const tbody = document.querySelector("#leaderboardTable tbody");
-  tbody.innerHTML = "";
+  const body = document.getElementById("leaderboardBody");
+  body.innerHTML = "";
 
-  const sorted = [...players].sort((a,b) => b.rating - a.rating);
+  const sorted = [...players].sort((a,b)=>b.rating-a.rating);
 
-  sorted.forEach((p, index) => {
+  sorted.forEach((p,index)=>{
     const tr = document.createElement("tr");
-    if (index === 0) tr.className = "rank-1";
-    if (index === 1) tr.className = "rank-2";
-    if (index === 2) tr.className = "rank-3";
+    if (index===0) tr.className="rank-1";
+    if (index===1) tr.className="rank-2";
+    if (index===2) tr.className="rank-3";
 
     tr.innerHTML = `
       <td>${index+1}</td>
@@ -333,120 +312,122 @@ function renderLeaderboard() {
       <td>${p.games}</td>
       <td><button class="small danger" onclick="removePlayer('${p.id}')">X</button></td>
     `;
-    tbody.appendChild(tr);
+    body.appendChild(tr);
   });
 }
 
 function renderDropdowns() {
   const p1 = document.getElementById("p1");
   const p2 = document.getElementById("p2");
-  p1.innerHTML = "";
-  p2.innerHTML = "";
-
-  players.forEach(p => {
-    const o1 = document.createElement("option");
-    o1.value = p.id;
-    o1.textContent = p.name;
-    p1.appendChild(o1);
-
-    const o2 = document.createElement("option");
-    o2.value = p.id;
-    o2.textContent = p.name;
-    p2.appendChild(o2);
+  p1.innerHTML="";
+  p2.innerHTML="";
+  players.forEach(p=>{
+    const o1=document.createElement("option");
+    o1.value=p.id;o1.textContent=p.name;p1.appendChild(o1);
+    const o2=document.createElement("option");
+    o2.value=p.id;o2.textContent=p.name;p2.appendChild(o2);
   });
 }
 
 function renderHistory() {
-  const historyDiv = document.getElementById("history");
-  historyDiv.innerHTML = "";
-
-  matches.forEach(m => {
-    const p1 = players.find(p => p.id === m.player1Id);
-    const p2 = players.find(p => p.id === m.player2Id);
-    if (!p1 || !p2) return;
-
-    const row = document.createElement("div");
-    row.className = "match-row";
-    row.innerHTML = `
-      ${p1.name} ${m.score1} - ${m.score2} ${p2.name}
-      <button class="small danger" onclick="deleteMatch('${m.id}')">Delete</button>
-    `;
-    historyDiv.appendChild(row);
+  const div=document.getElementById("history");
+  div.innerHTML="";
+  matches.forEach(m=>{
+    const p1=players.find(p=>p.id===m.player1Id);
+    const p2=players.find(p=>p.id===m.player2Id);
+    if(!p1||!p2)return;
+    const row=document.createElement("div");
+    row.className="match-row";
+    row.innerHTML=`${p1.name} ${m.score1} - ${m.score2} ${p2.name}
+    <button class="small danger" onclick="deleteMatch('${m.id}')">Delete</button>`;
+    div.appendChild(row);
   });
 }
 
 function generateSuggestions() {
-  suggestions = [];
-  if (players.length < 2) return;
+  suggestions=[];
+  if(players.length<2)return;
 
-  const shuffled = [...players].sort(() => Math.random() - 0.5);
+  const appearanceCount={};
+  matches.slice(-10).forEach(m=>{
+    appearanceCount[m.player1Id]=(appearanceCount[m.player1Id]||0)+1;
+    appearanceCount[m.player2Id]=(appearanceCount[m.player2Id]||0)+1;
+  });
 
-  for (let i = 0; i < shuffled.length - 1 && suggestions.length < 4; i++) {
-    const p1 = shuffled[i];
-    for (let j = i+1; j < shuffled.length; j++) {
-      const p2 = shuffled[j];
-      const alreadyPlayed = matches.some(m =>
-        (m.player1Id === p1.id && m.player2Id === p2.id) ||
-        (m.player1Id === p2.id && m.player2Id === p1.id)
-      );
-      if (!alreadyPlayed) {
-        suggestions.push({
-          id: crypto.randomUUID(),
-          p1Id: p1.id,
-          p2Id: p2.id
-        });
-        break;
-      }
+  const pairCounts={};
+  matches.forEach(m=>{
+    const key=[m.player1Id,m.player2Id].sort().join("-");
+    pairCounts[key]=(pairCounts[key]||0)+1;
+  });
+
+  const candidatePairs=[];
+  for(let i=0;i<players.length;i++){
+    for(let j=i+1;j<players.length;j++){
+      const p1=players[i];
+      const p2=players[j];
+      const key=[p1.id,p2.id].sort().join("-");
+      const pairCount=pairCounts[key]||0;
+      const ratingDiff=Math.abs(p1.rating-p2.rating);
+      const recentLoad=(appearanceCount[p1.id]||0)+(appearanceCount[p2.id]||0);
+      const score = pairCount*5 + ratingDiff/50 + recentLoad*2 + Math.random()*3;
+      candidatePairs.push({p1,p2,score});
     }
+  }
+
+  candidatePairs.sort((a,b)=>a.score-b.score);
+
+  const used=new Set();
+  for(let c of candidatePairs){
+    if(suggestions.length>=4)break;
+    if(used.has(c.p1.id)||used.has(c.p2.id))continue;
+    suggestions.push({
+      id:crypto.randomUUID(),
+      p1Id:c.p1.id,
+      p2Id:c.p2.id
+    });
+    used.add(c.p1.id);
+    used.add(c.p2.id);
+  }
+
+  while(suggestions.length<4 && candidatePairs.length>0){
+    const r=candidatePairs[Math.floor(Math.random()*candidatePairs.length)];
+    suggestions.push({
+      id:crypto.randomUUID(),
+      p1Id:r.p1.id,
+      p2Id:r.p2.id
+    });
   }
 }
 
-function renderSuggestions() {
-  const div = document.getElementById("suggestions");
-  div.innerHTML = "";
-
-  suggestions.forEach(s => {
-    const p1 = players.find(p => p.id === s.p1Id);
-    const p2 = players.find(p => p.id === s.p2Id);
-    if (!p1 || !p2) return;
-
-    const row = document.createElement("div");
-    row.className = "match-row";
-    row.innerHTML = `
+function renderSuggestions(){
+  const div=document.getElementById("suggestions");
+  div.innerHTML="";
+  suggestions.forEach(s=>{
+    const p1=players.find(p=>p.id===s.p1Id);
+    const p2=players.find(p=>p.id===s.p2Id);
+    if(!p1||!p2)return;
+    const row=document.createElement("div");
+    row.className="match-row";
+    row.innerHTML=`
       ${p1.name}
       <input type="number" id="sug1-${s.id}" style="width:50px">
       -
       <input type="number" id="sug2-${s.id}" style="width:50px">
       ${p2.name}
-      <button class="small" onclick="addMatch('${p1.id}','${p2.id}', parseInt(document.getElementById('sug1-${s.id}').value), parseInt(document.getElementById('sug2-${s.id}').value))">✔</button>
+      <button class="small" onclick="addMatch('${p1.id}','${p2.id}',parseInt(document.getElementById('sug1-${s.id}').value),parseInt(document.getElementById('sug2-${s.id}').value))">✔</button>
       <button class="small danger" onclick="removeSuggestion('${s.id}')">X</button>
     `;
     div.appendChild(row);
   });
 }
 
-function removeSuggestion(id) {
-  suggestions = suggestions.filter(s => s.id !== id);
+function removeSuggestion(id){
+  suggestions=suggestions.filter(s=>s.id!==id);
   renderSuggestions();
 }
 
-function renderStats() {
-  const stats = document.getElementById("stats");
-  stats.innerHTML = "";
-
-  if (players.length === 0) return;
-
-  const totalMatches = matches.length;
-  const highest = [...players].sort((a,b)=>b.rating-a.rating)[0];
-  const mostWins = [...players].sort((a,b)=>b.wins-a.wins)[0];
-
-  stats.innerHTML = `
-    <div class="stat-box">Total Matches: ${totalMatches}</div>
-    <div class="stat-box">Top Rated: ${highest.name} (${Math.round(highest.rating)})</div>
-    <div class="stat-box">Most Wins: ${mostWins.name} (${mostWins.wins})</div>
-  `;
-}
-
+loadData();
+recalcStats();
 render();
 </script>
 </body>
