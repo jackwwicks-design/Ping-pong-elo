@@ -1,316 +1,565 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Ping Pong Tournament</title>
+<title>🏓 Table Tennis Tournament</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f4f6fa;
-  height: 100vh;
-  overflow: hidden;
-}
+  :root {
+    --bg: #0d0f14;
+    --surface: #151820;
+    --surface2: #1c202c;
+    --border: #252a38;
+    --accent: #b5ff4d;
+    --accent2: #4dffce;
+    --red: #ff4d6a;
+    --muted: #4a5168;
+    --text: #e2e6f3;
+    --text-dim: #8890aa;
+    --gold: #ffd84d;
+    --silver: #c8ccda;
+    --bronze: #f0a56b;
+  }
 
-.container {
-  display: flex;
-  height: 100%;
-  padding: 20px;
-  gap: 20px;
-  box-sizing: border-box;
-}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-.panel {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
 
-.left { flex: 1; }
-.right { flex: 1.2; }
+  /* === HEADER === */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 52px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
 
-h2 { margin-top: 0; }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo span { color: var(--text-dim); font-size: 18px; letter-spacing: 1px; }
 
-button {
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-}
+  .clock-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  #clock {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+  #date {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
 
-button:hover { opacity: 0.9; }
+  .header-actions {
+    display: flex;
+    gap: 8px;
+  }
 
-.danger { background: #e74c3c; color: white; }
-.secondary { background: #bdc3c7; }
-.primary { background: #3498db; color: white; }
-.retire { background: #7f8c8d; color: white; }
+  /* === MAIN LAYOUT === */
+  .layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    padding: 14px;
+    gap: 14px;
+  }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
+  .col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+  }
 
-th, td {
-  padding: 6px;
-  text-align: center;
-}
+  .col-left { flex: 0 0 340px; }
+  .col-right { flex: 1; }
 
-th {
-  background: #f0f2f7;
-}
+  /* === CARDS === */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
 
-tr:nth-child(even) { background: #fafbff; }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+    flex-shrink: 0;
+  }
 
-.rank1 { background: linear-gradient(90deg,#fff8dc,#fff3b0); font-weight: bold; }
-.rank2 { background: linear-gradient(90deg,#f0f0f0,#e6e6e6); font-weight: bold; }
-.rank3 { background: linear-gradient(90deg,#ffe5cc,#ffd1a3); font-weight: bold; }
+  .card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+  }
 
-.retired-row {
-  opacity: 0.4;
-}
+  .card-body {
+    padding: 10px 14px;
+    flex: 1;
+    overflow-y: auto;
+  }
 
-.scroll {
-  overflow-y: auto;
-  flex: 1;
-}
+  .card-body::-webkit-scrollbar { width: 4px; }
+  .card-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-.section {
-  margin-bottom: 20px;
-}
+  /* === BUTTONS === */
+  btn, button {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 11px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+    letter-spacing: .3px;
+  }
+  button:hover { opacity: .85; }
+  button:active { transform: scale(.97); }
 
-.match-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px;
-  margin-bottom: 6px;
-  background: #f7f9ff;
-  border-radius: 6px;
-}
+  .btn-accent { background: var(--accent); color: #0d0f14; }
+  .btn-red { background: var(--red); color: white; }
+  .btn-muted { background: var(--border); color: var(--text-dim); }
+  .btn-retire { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
+  .btn-sm { padding: 3px 8px; font-size: 11px; }
 
-input[type=number] {
-  width: 50px;
-}
+  /* === INPUTS === */
+  input[type=text], input[type=number], select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 5px 9px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  input[type=number] { width: 54px; }
+  select { cursor: pointer; }
+
+  /* === ADD PLAYER ROW === */
+  .add-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .add-row input { flex: 1; }
+
+  /* === LEADERBOARD TABLE === */
+  .lb-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .lb-table thead tr {
+    background: var(--surface2);
+  }
+  .lb-table th {
+    padding: 5px 6px;
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+  .lb-table th:nth-child(2) { text-align: left; }
+
+  .lb-table td {
+    padding: 4px 6px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .lb-table td:nth-child(2) { text-align: left; }
+
+  .lb-table tbody tr { transition: background .1s; }
+  .lb-table tbody tr:hover { background: var(--surface2); }
+
+  .rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .r1 .rank-badge { background: var(--gold); color: #0d0f14; }
+  .r2 .rank-badge { background: var(--silver); color: #0d0f14; }
+  .r3 .rank-badge { background: var(--bronze); color: #0d0f14; }
+  .rx .rank-badge { background: var(--border); color: var(--text-dim); }
+
+  .r1 td:nth-child(2) { color: var(--gold); font-weight: 600; }
+  .r2 td:nth-child(2) { color: var(--silver); font-weight: 600; }
+  .r3 td:nth-child(2) { color: var(--bronze); font-weight: 600; }
+
+  .elo-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .elo-val.below { color: var(--red); }
+
+  .win-rate {
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .retired-row td { opacity: .35; }
+
+  .row-btns { display: flex; gap: 4px; justify-content: center; }
+
+  /* === MATCH CARD === */
+  .match-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .match-players {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    flex: 1;
+  }
+
+  .score-inputs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .match-actions { display: flex; gap: 4px; }
+
+  /* Manual match form */
+  .manual-form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .manual-form select { flex: 1; min-width: 100px; }
+  .vs-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+
+  /* History entry */
+  .history-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .history-entry:last-child { border-bottom: none; }
+  .history-score {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--accent2);
+    font-size: 12px;
+  }
+
+  /* Stats row in header */
+  .stats-pills {
+    display: flex;
+    gap: 6px;
+  }
+  .pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-dim);
+  }
+  .pill b { color: var(--accent); }
+
+  /* scrollbar global */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
 </head>
 <body>
 
-<div class="container">
+<header>
+  <div class="logo">🏓 <span>TABLE TENNIS TOURNAMENT</span></div>
+  <div class="stats-pills" id="statsBar">
+    <div class="pill">Players: <b id="statPlayers">0</b></div>
+    <div class="pill">Matches: <b id="statMatches">0</b></div>
+  </div>
+  <div class="clock-block">
+    <div id="clock">00:00:00</div>
+    <div id="date"></div>
+  </div>
+</header>
 
-<div class="panel left">
-<h2>Leaderboard</h2>
+<div class="layout">
 
-<div class="section">
-<input id="playerName" placeholder="Player name">
-<button class="primary" onclick="addPlayer()">Add</button>
-<button class="danger" onclick="resetTournament()">Reset</button>
-</div>
+  <!-- LEFT: Leaderboard -->
+  <div class="col col-left">
+    <div class="card" style="flex:1">
+      <div class="card-header">
+        <span class="card-title">Leaderboard</span>
+        <div style="display:flex;gap:6px">
+          <div class="add-row">
+            <input id="playerName" type="text" placeholder="Player name…">
+            <button class="btn-accent" onclick="addPlayer()">+ Add</button>
+          </div>
+          <button class="btn-red btn-sm" onclick="resetTournament()" title="Reset tournament">↺</button>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="lb-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Name</th><th>ELO</th><th>GP</th><th>W</th><th>L</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-<div class="scroll">
-<table>
-<thead>
-<tr>
-<th>#</th><th>Name</th><th>ELO</th><th>GP</th><th>W</th><th>L</th><th></th>
-</tr>
-</thead>
-<tbody id="leaderboard"></tbody>
-</table>
-</div>
-</div>
+  <!-- RIGHT: Matches -->
+  <div class="col col-right">
 
-<div class="panel right">
+    <!-- Manual Match -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">Record Match</span></div>
+      <div class="card-body">
+        <div class="manual-form">
+          <select id="p1"></select>
+          <input id="s1" type="number" min="0" placeholder="0">
+          <span class="vs-label">VS</span>
+          <input id="s2" type="number" min="0" placeholder="0">
+          <select id="p2"></select>
+          <button class="btn-accent" onclick="addMatch()">Record ✓</button>
+        </div>
+      </div>
+    </div>
 
-<div class="section">
-<h2>Manual Match</h2>
-<select id="p1"></select>
-<input id="s1" type="number" min="0">
-<select id="p2"></select>
-<input id="s2" type="number" min="0">
-<button class="primary" onclick="addMatch()">Add Match</button>
-</div>
+    <!-- Suggested Matches -->
+    <div class="card" style="flex:1;min-height:0">
+      <div class="card-header">
+        <span class="card-title">Suggested Matches</span>
+        <button class="btn-muted btn-sm" onclick="reshuffleSuggestions()">Reshuffle</button>
+      </div>
+      <div class="card-body" id="suggestions"></div>
+    </div>
 
-<div class="section">
-<h2>Suggested Matches</h2>
-<div id="suggestions" class="scroll"></div>
-</div>
+    <!-- Match History -->
+    <div class="card" style="flex:1;min-height:0">
+      <div class="card-header"><span class="card-title">Match History</span></div>
+      <div class="card-body" style="padding:0" id="history"></div>
+    </div>
 
-<div class="section">
-<h2>Match History</h2>
-<div id="history" class="scroll"></div>
-</div>
-
-</div>
+  </div>
 </div>
 
 <script>
 const START_RATING = 1000
+let players = [], matches = [], suggestions = []
 
-let players = []
-let matches = []
-let suggestions = []
+// === CLOCK ===
+function updateClock() {
+  const now = new Date()
+  const hh = String(now.getHours()).padStart(2,'0')
+  const mm = String(now.getMinutes()).padStart(2,'0')
+  const ss = String(now.getSeconds()).padStart(2,'0')
+  document.getElementById('clock').textContent = `${hh}:${mm}:${ss}`
+  const days = ['SUN','MON','TUE','WED','THU','FRI','SAT']
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+  document.getElementById('date').textContent =
+    `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`
+}
+updateClock()
+setInterval(updateClock, 1000)
 
+// === PERSISTENCE ===
 function save() {
-  localStorage.setItem("pingpong", JSON.stringify({players,matches,suggestions}))
+  try { localStorage.setItem("pingpong_v2", JSON.stringify({players,matches,suggestions})) } catch(e){}
 }
-
 function load() {
-  const data = localStorage.getItem("pingpong")
-  if (data) {
-    const parsed = JSON.parse(data)
-    players = parsed.players || []
-    matches = parsed.matches || []
-    suggestions = parsed.suggestions || []
-  }
+  try {
+    const d = localStorage.getItem("pingpong_v2") || localStorage.getItem("pingpong")
+    if (d) { const p = JSON.parse(d); players=p.players||[]; matches=p.matches||[]; suggestions=p.suggestions||[] }
+  } catch(e){}
 }
 
+// === STATS ===
 function recalcStats() {
-  players.forEach(p=>{
-    p.rating = START_RATING
-    p.games = 0
-    p.wins = 0
-  })
-
-  matches.forEach(m=>{
-    const p1 = players.find(p=>p.id===m.player1Id)
-    const p2 = players.find(p=>p.id===m.player2Id)
+  players.forEach(p => { p.rating=START_RATING; p.games=0; p.wins=0 })
+  matches.forEach(m => {
+    const p1=players.find(p=>p.id===m.player1Id), p2=players.find(p=>p.id===m.player2Id)
     if(!p1||!p2) return
-
-    const K1 = p1.games < 5 ? 40 : p1.games < 15 ? 30 : 20
-    const K2 = p2.games < 5 ? 40 : p2.games < 15 ? 30 : 20
-
-    const expected1 = 1/(1+Math.pow(10,(p2.rating-p1.rating)/400))
-    const expected2 = 1-expected1
-
-    const actual1 = m.score1>m.score2?1:0
-    const actual2 = 1-actual1
-
-    p1.rating += K1*(actual1-expected1)
-    p2.rating += K2*(actual2-expected2)
-
-    p1.games++
-    p2.games++
-    if(actual1) p1.wins++
-    if(actual2) p2.wins++
+    const K1=p1.games<5?40:p1.games<15?30:20, K2=p2.games<5?40:p2.games<15?30:20
+    const e1=1/(1+Math.pow(10,(p2.rating-p1.rating)/400)), e2=1-e1
+    const a1=m.score1>m.score2?1:0, a2=1-a1
+    p1.rating+=K1*(a1-e1); p2.rating+=K2*(a2-e2)
+    p1.games++; p2.games++
+    if(a1) p1.wins++; if(a2) p2.wins++
   })
 }
 
+// === RENDER ===
 function renderLeaderboard() {
-  const tbody = document.getElementById("leaderboard")
-  tbody.innerHTML=""
-
-  const active = players.filter(p=>!p.retired)
+  const tbody = document.getElementById('leaderboard')
+  tbody.innerHTML = ''
+  const active = players.filter(p=>!p.retired).sort((a,b)=>b.rating-a.rating)
   const retired = players.filter(p=>p.retired)
-
-  active.sort((a,b)=>b.rating-a.rating)
-
   const ordered = [...active,...retired]
+  document.getElementById('statPlayers').textContent = players.length
+  document.getElementById('statMatches').textContent = matches.length
 
-  ordered.forEach((p,i)=>{
-    const tr=document.createElement("tr")
-    if(i===0) tr.classList.add("rank1")
-    if(i===1) tr.classList.add("rank2")
-    if(i===2) tr.classList.add("rank3")
-    if(p.retired) tr.classList.add("retired-row")
-
-    const losses = p.games-p.wins
-
-    tr.innerHTML=`
-    <td>${i+1}</td>
-    <td>${p.name}</td>
-    <td>${Math.round(p.rating)}</td>
-    <td>${p.games}</td>
-    <td>${p.wins}</td>
-    <td>${losses}</td>
-    <td>
-      <button class="retire" onclick="toggleRetire('${p.id}')">${p.retired?"Unretire":"Retire"}</button>
-      <button class="danger" onclick="removePlayer('${p.id}')">X</button>
-    </td>`
+  ordered.forEach((p, i) => {
+    const tr = document.createElement('tr')
+    const cls = i===0?'r1':i===1?'r2':i===2?'r3':'rx'
+    tr.className = cls + (p.retired?' retired-row':'')
+    const losses = p.games - p.wins
+    const wr = p.games ? Math.round(p.wins/p.games*100) : 0
+    const eloClass = p.rating < START_RATING ? 'elo-val below' : 'elo-val'
+    tr.innerHTML = `
+      <td><span class="rank-badge">${i+1}</span></td>
+      <td>${p.name}</td>
+      <td><span class="${eloClass}">${Math.round(p.rating)}</span></td>
+      <td>${p.games}</td>
+      <td style="color:#b5ff4d">${p.wins}</td>
+      <td style="color:#ff4d6a">${losses}</td>
+      <td class="row-btns">
+        <button class="btn-retire btn-sm" onclick="toggleRetire('${p.id}')">${p.retired?'↩':'–'}</button>
+        <button class="btn-red btn-sm" onclick="removePlayer('${p.id}')">✕</button>
+      </td>`
     tbody.appendChild(tr)
   })
 }
 
 function renderDropdowns() {
-  const selects=[document.getElementById("p1"),document.getElementById("p2")]
-  selects.forEach(sel=>{
-    const val=sel.value
-    sel.innerHTML=""
-    players.filter(p=>!p.retired).forEach(p=>{
-      const opt=document.createElement("option")
-      opt.value=p.id
-      opt.textContent=p.name
-      sel.appendChild(opt)
+  const sels = [document.getElementById('p1'), document.getElementById('p2')]
+  sels.forEach(sel => {
+    const val = sel.value
+    sel.innerHTML = ''
+    players.filter(p=>!p.retired).forEach(p => {
+      const o = document.createElement('option')
+      o.value = p.id; o.textContent = p.name
+      sel.appendChild(o)
     })
-    sel.value=val
+    sel.value = val
   })
 }
 
 function renderHistory() {
-  const div=document.getElementById("history")
-  div.innerHTML=""
-  matches.forEach(m=>{
-    const p1=players.find(p=>p.id===m.player1Id)
-    const p2=players.find(p=>p.id===m.player2Id)
+  const div = document.getElementById('history')
+  div.innerHTML = ''
+  const rev = [...matches].reverse()
+  rev.forEach(m => {
+    const p1=players.find(p=>p.id===m.player1Id), p2=players.find(p=>p.id===m.player2Id)
     if(!p1||!p2) return
-
-    const row=document.createElement("div")
-    row.className="match-card"
-    row.innerHTML=`
-      <div>${p1.name} ${m.score1} - ${m.score2} ${p2.name}</div>
-      <button class="danger" onclick="deleteMatch('${m.id}')">Delete</button>`
-    div.appendChild(row)
-  })
-}
-
-function renderSuggestions() {
-  const div=document.getElementById("suggestions")
-  div.innerHTML=""
-
-  refillSuggestions()
-
-  suggestions.forEach(s=>{
-    const p1=players.find(p=>p.id===s.player1Id)
-    const p2=players.find(p=>p.id===s.player2Id)
-    if(!p1||!p2||p1.retired||p2.retired) return
-
-    const row=document.createElement("div")
-    row.className="match-card"
-    row.innerHTML=`
-      <div>${p1.name} <input type="number" min="0" id="s1_${s.id}"> -
-      <input type="number" min="0" id="s2_${s.id}"> ${p2.name}</div>
-      <div>
-      <button class="primary" onclick="playSuggestion('${s.id}')">✓</button>
-      <button class="secondary" onclick="removeSuggestion('${s.id}')">✕</button>
+    const winner = m.score1>m.score2 ? p1.name : p2.name
+    const row = document.createElement('div')
+    row.className = 'history-entry'
+    row.innerHTML = `
+      <span>${p1.name} <span class="history-score">${m.score1}–${m.score2}</span> ${p2.name}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:10px;color:var(--text-dim)">🏆 ${winner}</span>
+        <button class="btn-red btn-sm" onclick="deleteMatch('${m.id}')">✕</button>
       </div>`
     div.appendChild(row)
   })
+  if(!matches.length) div.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px">No matches yet.</div>'
 }
 
-function refillSuggestions() {
-  suggestions = suggestions.filter(s=>{
-    const p1=players.find(p=>p.id===s.player1Id)
-    const p2=players.find(p=>p.id===s.player2Id)
-    return p1 && p2 && !p1.retired && !p2.retired
+function renderSuggestions() {
+  const div = document.getElementById('suggestions')
+  div.innerHTML = ''
+  refillSuggestions()
+
+  const visible = suggestions.filter(s => {
+    const p1=players.find(p=>p.id===s.player1Id), p2=players.find(p=>p.id===s.player2Id)
+    return p1&&p2&&!p1.retired&&!p2.retired
   })
 
-  while(suggestions.length<4){
-    const active=players.filter(p=>!p.retired)
-    if(active.length<2) break
-
-    const p1=active[Math.floor(Math.random()*active.length)]
-    let p2=active[Math.floor(Math.random()*active.length)]
-    if(p1.id===p2.id) continue
-
-    suggestions.push({
-      id:crypto.randomUUID(),
-      player1Id:p1.id,
-      player2Id:p2.id
-    })
+  if(!visible.length) {
+    div.innerHTML = '<div style="color:var(--text-dim);font-size:12px">Add at least 2 players to get suggestions.</div>'
+    return
   }
+
+  visible.forEach(s => {
+    const p1=players.find(p=>p.id===s.player1Id), p2=players.find(p=>p.id===s.player2Id)
+    const row = document.createElement('div')
+    row.className = 'match-card'
+    row.innerHTML = `
+      <div class="match-players">
+        <span>${p1.name}</span>
+        <div class="score-inputs">
+          <input type="number" min="0" id="s1_${s.id}" placeholder="0">
+          <span style="color:var(--border)">–</span>
+          <input type="number" min="0" id="s2_${s.id}" placeholder="0">
+        </div>
+        <span>${p2.name}</span>
+      </div>
+      <div class="match-actions">
+        <button class="btn-accent btn-sm" onclick="playSuggestion('${s.id}')">✓</button>
+        <button class="btn-muted btn-sm" onclick="removeSuggestion('${s.id}')">✕</button>
+      </div>`
+    div.appendChild(row)
+  })
 }
 
 function render() {
@@ -322,71 +571,86 @@ function render() {
   save()
 }
 
-function addPlayer(){
-  const name=document.getElementById("playerName").value.trim()
+// === ACTIONS ===
+function addPlayer() {
+  const name = document.getElementById('playerName').value.trim()
   if(!name) return
   players.push({id:crypto.randomUUID(),name,rating:START_RATING,games:0,wins:0,retired:false})
-  document.getElementById("playerName").value=""
+  document.getElementById('playerName').value = ''
   render()
 }
 
-function removePlayer(id){
+document.getElementById('playerName').addEventListener('keydown', e => { if(e.key==='Enter') addPlayer() })
+
+function removePlayer(id) {
   players=players.filter(p=>p.id!==id)
-  matches=matches.filter(m=>m.player1Id!==id && m.player2Id!==id)
-  suggestions=suggestions.filter(s=>s.player1Id!==id && s.player2Id!==id)
+  matches=matches.filter(m=>m.player1Id!==id&&m.player2Id!==id)
+  suggestions=suggestions.filter(s=>s.player1Id!==id&&s.player2Id!==id)
   render()
 }
 
-function toggleRetire(id){
+function toggleRetire(id) {
   const p=players.find(p=>p.id===id)
-  if(!p) return
-  p.retired=!p.retired
-  render()
+  if(p) { p.retired=!p.retired; render() }
 }
 
-function addMatch(){
-  const p1=document.getElementById("p1").value
-  const p2=document.getElementById("p2").value
-  const s1=parseInt(document.getElementById("s1").value)
-  const s2=parseInt(document.getElementById("s2").value)
+function addMatch() {
+  const p1=document.getElementById('p1').value, p2=document.getElementById('p2').value
+  const s1=parseInt(document.getElementById('s1').value), s2=parseInt(document.getElementById('s2').value)
   if(!p1||!p2||p1===p2||isNaN(s1)||isNaN(s2)) return
-
   matches.push({id:crypto.randomUUID(),player1Id:p1,player2Id:p2,score1:s1,score2:s2})
-  document.getElementById("s1").value=""
-  document.getElementById("s2").value=""
+  document.getElementById('s1').value = ''
+  document.getElementById('s2').value = ''
   render()
 }
 
-function deleteMatch(id){
+function deleteMatch(id) {
   matches=matches.filter(m=>m.id!==id)
   render()
 }
 
-function playSuggestion(id){
+function refillSuggestions() {
+  suggestions=suggestions.filter(s=>{
+    const p1=players.find(p=>p.id===s.player1Id), p2=players.find(p=>p.id===s.player2Id)
+    return p1&&p2&&!p1.retired&&!p2.retired
+  })
+  let attempts=0
+  while(suggestions.length<4 && attempts<100) {
+    attempts++
+    const active=players.filter(p=>!p.retired)
+    if(active.length<2) break
+    const p1=active[Math.floor(Math.random()*active.length)]
+    const p2=active[Math.floor(Math.random()*active.length)]
+    if(p1.id===p2.id) continue
+    const dupe=suggestions.some(s=>(s.player1Id===p1.id&&s.player2Id===p2.id)||(s.player1Id===p2.id&&s.player2Id===p1.id))
+    if(!dupe) suggestions.push({id:crypto.randomUUID(),player1Id:p1.id,player2Id:p2.id})
+  }
+}
+
+function reshuffleSuggestions() {
+  suggestions = []
+  render()
+}
+
+function playSuggestion(id) {
   const s=suggestions.find(x=>x.id===id)
   if(!s) return
-  const s1=parseInt(document.getElementById("s1_"+id).value)
-  const s2=parseInt(document.getElementById("s2_"+id).value)
+  const s1=parseInt(document.getElementById('s1_'+id).value), s2=parseInt(document.getElementById('s2_'+id).value)
   if(isNaN(s1)||isNaN(s2)) return
   matches.push({id:crypto.randomUUID(),player1Id:s.player1Id,player2Id:s.player2Id,score1:s1,score2:s2})
   suggestions=suggestions.filter(x=>x.id!==id)
   render()
 }
 
-function removeSuggestion(id){
+function removeSuggestion(id) {
   suggestions=suggestions.filter(x=>x.id!==id)
   render()
 }
 
-function resetTournament(){
-  if(confirm("Are you sure? This will delete all matches and reset ratings.")){
-    matches=[]
-    suggestions=[]
-    players.forEach(p=>{
-      p.rating=START_RATING
-      p.games=0
-      p.wins=0
-    })
+function resetTournament() {
+  if(confirm('Reset all matches and ratings? Players will be kept.')) {
+    matches=[]; suggestions=[]
+    players.forEach(p=>{p.rating=START_RATING;p.games=0;p.wins=0})
     render()
   }
 }
@@ -394,6 +658,5 @@ function resetTournament(){
 load()
 render()
 </script>
-
 </body>
 </html>
